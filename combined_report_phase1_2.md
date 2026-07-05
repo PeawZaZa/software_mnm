@@ -6,6 +6,7 @@
 |---|---|---|
 | 1 | ปวริศ คูณศรี | Project Manager |
 | 2 | ตรัยรัตน์ วงศ์สิทธิ์ | Tech Lead |
+| 3 | พนาวุฒน์ อภิปสันติ | QA / Tester |
 
 
 > อ้างอิงจาก System Understanding Report (Code Archaeology — Week 1)
