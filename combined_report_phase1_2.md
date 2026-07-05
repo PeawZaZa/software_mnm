@@ -2,7 +2,11 @@
 ## Inventory System v1.0 — System Structure & Risk Analysis
 
 **วิชา:** ENGSE225 + ENGSE202 | **Phase:** 1.2 — System Analysis  
-**กลุ่ม:** ___________________ | **วันที่:** ___________________
+| # | ชื่อ | ตำแหน่ง |
+|---|---|---|---|
+| 1 | ปวริศ คูณศรี | Project Manager |
+| 2 | ตรัยรัตน์ วงศ์สิทธิ์ | Tech Lead |
+
 
 > อ้างอิงจาก System Understanding Report (Code Archaeology — Week 1)
 
