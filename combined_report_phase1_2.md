@@ -139,7 +139,7 @@ Score 2  (L×M) ██            RSK-09  — 🟢 Low: Sprint 2+
 ## 3. ลิงก์ Jira Board
 
 **Jira Board URL:**
-> `https://_____________________________.atlassian.net/jira/software/projects/INV/boards`
+> `https://nicky2011abcd.atlassian.net/jira/software/projects/INV/boards`
 
 **สถานะ WBS (INV-1 ถึง INV-16):**
 
