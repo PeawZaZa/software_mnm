@@ -87,7 +87,7 @@ class TestSaveFunction:
 
     def test_save_creates_file(self, temp_db):
         """save() ต้องสร้างไฟล์ data.json"""
-        app.save()
+        app.save()        
         assert os.path.exists(temp_db)
 
     def test_save_writes_correct_data(self, temp_db):
@@ -308,30 +308,27 @@ class TestStockOutMenu:
         assert app.x["101"]["q"] == 5
         assert app.x["101"]["q"] >= 5  # ไม่ต้องเตือน
 
-    # ── Known Bug: Negative Amount ──
+    # ── Fixed Bug: Negative Amount ──
 
     def test_BUG_INV7_negative_amount_passes_condition(self):
         """
-        🐛 BUG INV-7: เงื่อนไข q >= amt ผ่านเมื่อ amt เป็นลบ
-        50 >= -5 → True → สต๊อกเพิ่มแทนที่จะลด
-
-        ❗ หลัง fix INV-7 แล้ว test นี้ต้องถูกอัปเดต:
-           assert success is False
-           assert app.x["101"]["q"] == 50
+        ✅ FIX INV-7: เงื่อนไขต้องล้มเหลวเมื่อ amt เป็นลบ
+        (อัปเดตตาม commit: test(qa): update BUG_INV7 test after fix)
         """
         success, _ = apply_stock_out("101", -5)
-        # พฤติกรรมปัจจุบัน (บั๊ก): ผ่านและสต๊อกเพิ่ม
-        assert success is True, "BUG: ควรล้มเหลวเมื่อ amt เป็นลบ"
-        assert app.x["101"]["q"] == 55, \
-            f"BUG: สต๊อกเพิ่มเป็น {app.x['101']['q']} แทนที่จะคงที่"
+        # แก้ไข assertion ตามความคาดหวังหลังแก้บั๊กแล้ว: ต้อง Fail และสต๊อกเท่าเดิม
+        assert success is False, "ควรล้มเหลวเมื่อ amt เป็นลบ"
+        assert app.x["101"]["q"] == 50, \
+            f"สต๊อกต้องคงที่เป็น 50 แต่เปลี่ยนเป็น {app.x['101']['q']}"
 
     def test_BUG_INV7_zero_amount_passes(self):
         """
-        🐛 BUG INV-7 (ส่วนขยาย): ตัดด้วย 0 ก็ผ่าน — สต๊อกไม่เปลี่ยนแต่บันทึกไฟล์โดยไม่จำเป็น
+        ✅ FIX INV-7 (ส่วนขยาย): ตัดด้วย 0 ต้องไม่ผ่าน (ล้มเหลว)
         """
         success, _ = apply_stock_out("101", 0)
-        assert success is True  # ผ่านโดยไม่ควร
-        assert app.x["101"]["q"] == 50  # qty ไม่เปลี่ยน (แต่มี side effect จาก save())
+        # แก้ไข assertion: ต้อง Fail เมื่อตัดด้วย 0
+        assert success is False, "ควรล้มเหลวเมื่อ amt เป็น 0"
+        assert app.x["101"]["q"] == 50  # qty ไม่เปลี่ยน
 
 
 # ══════════════════════════════════════════════════
