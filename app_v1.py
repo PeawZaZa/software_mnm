@@ -67,7 +67,13 @@ def main():
             # Cut stock
             id_to_cut = input("Enter product ID to cut stock: ")
             if id_to_cut in x:
-                amt = int(input("How many items out?: "))
+                # fix(menu3): add try/except for amount input [INV-6]
+                try:
+                    amt = int(input("How many items out?: "))
+                except ValueError:
+                    print("Invalid input: Amount must be a number.")
+                    continue
+                    
                 if x[id_to_cut]['q'] >= amt:
                     x[id_to_cut]['q'] = x[id_to_cut]['q'] - amt
                     save()
