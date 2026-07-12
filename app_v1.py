@@ -48,11 +48,8 @@ def main():
             e = input("Enter Category: ")
             
             # This logic updates or creates
-            if a in x:
-                # if already have, just add qty? or overwrite? Let's overwrite!
-                x[a] = {"n": b, "q": c, "p": d, "c": e}
-            else:
-                x[a] = {"n": b, "q": c, "p": d, "c": e}
+            # แก้ไข: ลบ if/else ที่ทำงานเหมือนกันทิ้ง และให้เขียนทับ/สร้างใหม่ไปเลย
+            x[a] = {"n": b, "q": c, "p": d, "c": e}
             save()
             print("Done.")
             
