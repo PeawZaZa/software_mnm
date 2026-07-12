@@ -246,3 +246,144 @@ class TestCheckCheckMenu:
         }
         _, _, low = calc_summary(inv)
         assert "OkayItem" not in low
+# ══════════════════════════════════════════════════
+# SECTION 3: เมนู 3 — Stock Out Logic
+# ══════════════════════════════════════════════════
+
+def apply_stock_out(product_id, amt):
+    """
+    จำลอง logic เมนู 3 (Out) — L.55-70 ใน app_v1.py
+    คืนค่า (success: bool, message: str)
+    """
+    if product_id not in app.x:
+        return False, "Product not found!"
+    if app.x[product_id]['q'] >= amt:
+        app.x[product_id]['q'] -= amt
+        warning = app.x[product_id]['q'] < 5
+        return True, "WARNING" if warning else "Stock updated."
+    else:
+        return False, "Error: Not enough stock!"
+
+
+class TestStockOutMenu:
+
+    def test_normal_cut_reduces_qty(self):
+        """ตัดสต๊อกปกติต้องลดจำนวนลงถูกต้อง"""
+        success, _ = apply_stock_out("101", 10)
+        assert success is True
+        assert app.x["101"]["q"] == 40
+
+    def test_cut_exact_amount_results_in_zero(self):
+        """ตัดออกพอดีกับที่มีต้องได้ qty = 0"""
+        success, _ = apply_stock_out("101", 50)
+        assert success is True
+        assert app.x["101"]["q"] == 0
+
+    def test_cut_more_than_available_fails(self):
+        """ตัดเกินที่มีต้องล้มเหลวและ qty ไม่เปลี่ยน"""
+        success, msg = apply_stock_out("101", 999)
+        assert success is False
+        assert "Not enough stock" in msg
+        assert app.x["101"]["q"] == 50  # ต้องไม่เปลี่ยนแปลง
+
+    def test_cut_nonexistent_product_fails(self):
+        """ตัดสินค้าที่ไม่มีใน inventory ต้องล้มเหลว"""
+        success, msg = apply_stock_out("999", 1)
+        assert success is False
+        assert "not found" in msg.lower()
+
+    def test_warning_when_qty_below_5_after_cut(self):
+        """ต้องแจ้งเตือนเมื่อสต๊อกหลังตัดน้อยกว่า 5"""
+        app.x["101"]["q"] = 10
+        success, msg = apply_stock_out("101", 7)  # เหลือ 3
+        assert success is True
+        assert "WARNING" in msg
+        assert app.x["101"]["q"] == 3
+
+    def test_no_warning_when_qty_equals_5(self):
+        """qty = 5 ไม่ต้องแจ้งเตือน (เงื่อนไขคือ < 5 ไม่ใช่ <= 5)"""
+        app.x["101"]["q"] = 10
+        success, msg = apply_stock_out("101", 5)  # เหลือ 5
+        assert success is True
+        assert app.x["101"]["q"] == 5
+        assert app.x["101"]["q"] >= 5  # ไม่ต้องเตือน
+
+    # ── Known Bug: Negative Amount ──
+
+    def test_BUG_INV7_negative_amount_passes_condition(self):
+        """
+        🐛 BUG INV-7: เงื่อนไข q >= amt ผ่านเมื่อ amt เป็นลบ
+        50 >= -5 → True → สต๊อกเพิ่มแทนที่จะลด
+
+        ❗ หลัง fix INV-7 แล้ว test นี้ต้องถูกอัปเดต:
+           assert success is False
+           assert app.x["101"]["q"] == 50
+        """
+        success, _ = apply_stock_out("101", -5)
+        # พฤติกรรมปัจจุบัน (บั๊ก): ผ่านและสต๊อกเพิ่ม
+        assert success is True, "BUG: ควรล้มเหลวเมื่อ amt เป็นลบ"
+        assert app.x["101"]["q"] == 55, \
+            f"BUG: สต๊อกเพิ่มเป็น {app.x['101']['q']} แทนที่จะคงที่"
+
+    def test_BUG_INV7_zero_amount_passes(self):
+        """
+        🐛 BUG INV-7 (ส่วนขยาย): ตัดด้วย 0 ก็ผ่าน — สต๊อกไม่เปลี่ยนแต่บันทึกไฟล์โดยไม่จำเป็น
+        """
+        success, _ = apply_stock_out("101", 0)
+        assert success is True  # ผ่านโดยไม่ควร
+        assert app.x["101"]["q"] == 50  # qty ไม่เปลี่ยน (แต่มี side effect จาก save())
+
+
+# ══════════════════════════════════════════════════
+# SECTION 4: เมนู 2 — Add / Update Logic
+# ══════════════════════════════════════════════════
+
+def apply_add_update(pid, name, qty, price, cat):
+    """จำลอง logic เมนู 2 (Add/Update) — L.39-53 ใน app_v1.py"""
+    if pid in app.x:
+        app.x[pid] = {"n": name, "q": qty, "p": price, "c": cat}
+    else:
+        app.x[pid] = {"n": name, "q": qty, "p": price, "c": cat}
+
+
+class TestAddUpdateMenu:
+
+    def test_add_new_product(self):
+        """เพิ่มสินค้าใหม่ต้องปรากฏใน inventory"""
+        apply_add_update("NEW", "New Product", 30, 15.0, "Test")
+        assert "NEW" in app.x
+        assert app.x["NEW"]["n"] == "New Product"
+        assert app.x["NEW"]["q"] == 30
+        assert app.x["NEW"]["p"] == pytest.approx(15.0)
+
+    def test_update_existing_product_overwrites_all_fields(self):
+        """อัปเดตสินค้าที่มีอยู่แล้วต้องเขียนทับข้อมูลทั้งหมด"""
+        apply_add_update("101", "Renamed Noodle", 99, 9.9, "NewCat")
+        assert app.x["101"]["n"] == "Renamed Noodle"
+        assert app.x["101"]["q"] == 99
+        assert app.x["101"]["p"] == pytest.approx(9.9)
+        assert app.x["101"]["c"] == "NewCat"
+
+    def test_add_preserves_existing_items(self):
+        """เพิ่มสินค้าใหม่ต้องไม่ลบสินค้าเดิม"""
+        apply_add_update("NEW", "Extra", 5, 5.0, "T")
+        assert "101" in app.x  # ยังอยู่
+        assert "102" in app.x  # ยังอยู่
+        assert "103" in app.x  # ยังอยู่
+
+    def test_category_stored_in_key_c(self):
+        """หมวดหมู่ต้องเก็บในคีย์ 'c' (ล็อก data structure)"""
+        apply_add_update("X01", "Item", 10, 5.0, "Snack")
+        assert app.x["X01"]["c"] == "Snack"
+
+    def test_BUG_INV8_ifelse_identical_behavior(self):
+        """
+        🐛 BUG INV-8: if/else ทั้งสองกรณีทำงานเหมือนกัน (เขียนทับทุกครั้ง)
+        ไม่ว่าจะเป็น ID ใหม่หรือ ID ที่มีอยู่ → พฤติกรรมเหมือนกัน
+        Requirement จริง: ยังไม่ชัดว่าควร "บวกสต๊อก" หรือ "เขียนทับ"
+        """
+        original_qty = app.x["101"]["q"]  # 50
+        apply_add_update("101", app.x["101"]["n"], 1, app.x["101"]["p"], app.x["101"]["c"])
+        # BUG: qty ถูกเขียนทับเป็น 1 แทนที่จะบวก (50 + 1 = 51)
+        assert app.x["101"]["q"] == 1, "BUG: qty ถูก overwrite ไม่ใช่ accumulate"
+        assert app.x["101"]["q"] != original_qty + 1  # ไม่ใช่การบวกเพิ่ม
