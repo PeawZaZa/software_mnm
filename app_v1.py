@@ -8,8 +8,15 @@ x = {}
 def load():
     global x
     if os.path.exists(db):
-        with open(db, 'r') as f:
-            x = json.load(f)
+        try: # [INV-10] เพิ่ม try/except สำหรับอ่านไฟล์
+            with open(db, 'r') as f:
+                x = json.load(f)
+        except Exception: # [INV-10] ถ้าไฟล์เสียหรืออ่านไม่ได้ ให้โหลด default แทน
+            x = {
+                "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"},
+                "102": {"n": "Lactasoy Milk", "q": 20, "p": 12.0, "c": "Drink"},
+                "103": {"n": "Singha Water", "q": 100, "p": 10.0, "c": "Drink"}
+            }
     else:
         # default data if file not found
         x = {
