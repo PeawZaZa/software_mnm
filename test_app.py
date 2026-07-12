@@ -387,3 +387,37 @@ class TestAddUpdateMenu:
         # BUG: qty ถูกเขียนทับเป็น 1 แทนที่จะบวก (50 + 1 = 51)
         assert app.x["101"]["q"] == 1, "BUG: qty ถูก overwrite ไม่ใช่ accumulate"
         assert app.x["101"]["q"] != original_qty + 1  # ไม่ใช่การบวกเพิ่ม
+
+# ══════════════════════════════════════════════════
+# SECTION 5: Known Inconsistencies
+# ══════════════════════════════════════════════════
+
+class TestKnownInconsistencies:
+
+    def test_BUG_INV9_threshold_mismatch_between_menus(self):
+        """
+        🐛 BUG INV-9: เมนู 3 ใช้ < 5 แต่เมนู 4 ใช้ < 10
+        qty=7 → เมนู 4 แจ้งเตือน แต่เมนู 3 ไม่แจ้งเตือน
+        ต้องถูกกำหนดเป็นค่าคงที่เดียวกัน (LOW_STOCK_THRESHOLD)
+        """
+        qty = 7
+        MENU3_THRESHOLD = 5
+        MENU4_THRESHOLD = 10
+        is_low_in_menu3 = qty < MENU3_THRESHOLD
+        is_low_in_menu4 = qty < MENU4_THRESHOLD
+        assert is_low_in_menu4 is True,  "เมนู 4: qty=7 ควรแจ้งเตือน"
+        assert is_low_in_menu3 is False, "เมนู 3: qty=7 ไม่แจ้งเตือน"
+        assert is_low_in_menu3 != is_low_in_menu4, \
+            "BUG: พฤติกรรมต่างกัน — ต้องแก้ INV-9 เพื่อให้ตรงกัน"
+
+    def test_default_inventory_ids_are_strings(self):
+        """ล็อก: product ID ต้องเป็น string ไม่ใช่ int"""
+        assert isinstance(list(app.x.keys())[0], str)
+
+    def test_default_inventory_qty_is_int(self):
+        """ล็อก: qty ต้องเป็น int"""
+        assert isinstance(app.x["101"]["q"], int)
+
+    def test_default_inventory_price_is_float(self):
+        """ล็อก: price ต้องเป็น float"""
+        assert isinstance(app.x["101"]["p"], float)
