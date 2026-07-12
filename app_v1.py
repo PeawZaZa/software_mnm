@@ -61,6 +61,12 @@ def main():
             id_to_cut = input("Enter product ID to cut stock: ")
             if id_to_cut in x:
                 amt = int(input("How many items out?: "))
+                
+                # fix(menu3): reject negative and zero amount input [INV-7]
+                if amt <= 0:
+                    print("Error: Amount must be greater than zero!")
+                    continue
+                    
                 if x[id_to_cut]['q'] >= amt:
                     x[id_to_cut]['q'] = x[id_to_cut]['q'] - amt
                     save()
