@@ -26,8 +26,11 @@ def load():
         }
 
 def save():
-    with open(db, 'w') as f:
+    # [INV-11] ทำ Atomic write ผ่าน tmp file เพื่อป้องกันไฟล์เสียระหว่างเซฟ
+    temp_db = db + ".tmp"
+    with open(temp_db, 'w') as f:
         json.dump(x, f)
+    os.replace(temp_db, db) # [INV-11] replace ไฟล์ต้นฉบับเมื่อเขียนเสร็จสมบูรณ์
 
 def main():
     load()
