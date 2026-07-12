@@ -43,8 +43,15 @@ def main():
         elif choice == "2":
             a = input("Enter ID: ")
             b = input("Enter Name: ")
-            c = int(input("Enter Qty: "))
-            d = float(input("Enter Price: "))
+            
+            # fix(menu2): add try/except for int() and float() input [INV-6]
+            try:
+                c = int(input("Enter Qty: "))
+                d = float(input("Enter Price: "))
+            except ValueError:
+                print("Invalid input: Qty and Price must be numbers.")
+                continue
+                
             e = input("Enter Category: ")
             
             # This logic updates or creates
