@@ -4,6 +4,7 @@ import os
 # global variables
 db = "data.json"
 x = {}
+LOW_STOCK = 10 # แก้ไข: เพิ่มตัวแปรคงที่สำหรับกำหนดเกณฑ์สต๊อกต่ำ
 
 def load():
     global x
@@ -63,7 +64,7 @@ def main():
                     save()
                     print("Stock updated.")
                     # Check if running low
-                    if x[id_to_cut]['q'] < 5:
+                    if x[id_to_cut]['q'] < LOW_STOCK: # แก้ไข: ใช้ค่าคงที่ LOW_STOCK แทนตัวเลข 5
                         print("!!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!")
                 else:
                     print("Error: Not enough stock!")
@@ -79,12 +80,12 @@ def main():
             for k in x:
                 total_items += 1
                 total_val += x[k]['q'] * x[k]['p']
-                if x[k]['q'] < 10:
+                if x[k]['q'] < LOW_STOCK: # แก้ไข: ใช้ค่าคงที่ LOW_STOCK แทนตัวเลข 10
                     low_stock_list.append(x[k]['n'])
                     
             print(f"Total product types: {total_items}")
             print(f"Total inventory value: {total_val} THB")
-            print(f"Alert low stock (<10): {', '.join(low_stock_list)}")
+            print(f"Alert low stock (<{LOW_STOCK}): {', '.join(low_stock_list)}") # แก้ไข: ดึงค่า LOW_STOCK มาแสดงในข้อความแจ้งเตือน
             
         elif choice == "5":
             print("Bye")
