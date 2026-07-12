@@ -121,3 +121,128 @@ class TestSaveFunction:
         # ต้องมีแค่ ONLY ไม่มี 101 แล้ว
         assert "ONLY" in data
         assert "101" not in data
+# ══════════════════════════════════════════════════
+# SECTION 2: เมนู 4 — Check Check (คำนวณมูลค่า)
+# ══════════════════════════════════════════════════
+
+def calc_summary(inventory):
+    """
+    จำลอง logic ของเมนู 4 (Check Check) — L.72-86 ใน app_v1.py
+    ใช้ใน test เพื่อตรวจสอบพฤติกรรมก่อน refactor
+    """
+    total_items = 0
+    total_val = 0.0
+    low_stock_list = []
+    for k in inventory:
+        total_items += 1
+        total_val += inventory[k]['q'] * inventory[k]['p']
+        if inventory[k]['q'] < 10:
+            low_stock_list.append(inventory[k]['n'])
+    return total_items, total_val, low_stock_list
+
+
+class TestCheckCheckMenu:
+    """ล็อกพฤติกรรมเมนู 4 — ห้ามเปลี่ยน test เหล่านี้ก่อน refactor เสร็จ"""
+
+    def test_total_item_types_default(self):
+        """จำนวนชนิดสินค้า default ต้องเท่ากับ 3"""
+        total, _, _ = calc_summary(app.x)
+        assert total == 3
+
+    def test_total_value_default_inventory(self):
+        """
+        มูลค่าสต๊อกรวมของ default inventory ต้องเท่ากับ 1,540 THB
+        101: 50 × 6.0  = 300.0
+        102: 20 × 12.0 = 240.0
+        103: 100 × 10.0 = 1000.0
+        รวม = 1,540.0 THB
+        """
+        _, total_val, _ = calc_summary(app.x)
+        assert total_val == pytest.approx(1540.0), \
+            f"Expected 1540.0 THB, got {total_val}"
+
+    def test_total_value_single_item(self):
+        """คำนวณมูลค่า qty × price ของสินค้าชิ้นเดียว"""
+        inv = {"X01": {"n": "Test", "q": 7, "p": 25.0, "c": "T"}}
+        _, total_val, _ = calc_summary(inv)
+        assert total_val == pytest.approx(175.0)
+
+    def test_total_value_zero_qty(self):
+        """สินค้าที่ qty = 0 ต้องมีมูลค่าเป็น 0"""
+        inv = {"X01": {"n": "Empty", "q": 0, "p": 100.0, "c": "T"}}
+        _, total_val, _ = calc_summary(inv)
+        assert total_val == pytest.approx(0.0)
+
+    def test_total_value_empty_inventory(self):
+        """สต๊อกว่างเปล่าต้องได้มูลค่า 0 และ 0 ชนิด"""
+        total, total_val, low = calc_summary({})
+        assert total == 0
+        assert total_val == pytest.approx(0.0)
+        assert low == []
+
+    def test_total_value_float_precision(self):
+        """ราคาทศนิยมต้องคำนวณถูกต้อง"""
+        inv = {"X01": {"n": "Precise", "q": 3, "p": 33.33, "c": "T"}}
+        _, total_val, _ = calc_summary(inv)
+        assert total_val == pytest.approx(99.99)
+
+    def test_total_value_multiple_items_manual(self):
+        """ตรวจสอบ sum ของหลายชิ้นด้วยมือ"""
+        inv = {
+            "A": {"n": "A", "q": 10, "p": 5.0,  "c": "T"},  # 50
+            "B": {"n": "B", "q": 4,  "p": 20.0, "c": "T"},  # 80
+            "C": {"n": "C", "q": 1,  "p": 100.0,"c": "T"},  # 100
+        }
+        _, total_val, _ = calc_summary(inv)
+        assert total_val == pytest.approx(230.0)
+
+    # ── Low Stock Alerts ──
+
+    def test_low_stock_threshold_is_10(self):
+        """เมนู 4 แจ้งเตือนเมื่อ qty < 10 (ล็อก threshold = 10)"""
+        inv = {
+            "A": {"n": "BelowTen", "q": 9,  "p": 1.0, "c": "T"},
+            "B": {"n": "AtTen",    "q": 10, "p": 1.0, "c": "T"},
+            "C": {"n": "AboveTen", "q": 11, "p": 1.0, "c": "T"},
+        }
+        _, _, low = calc_summary(inv)
+        assert "BelowTen" in low
+        assert "AtTen"    not in low  # 10 ไม่ใช่ < 10
+        assert "AboveTen" not in low
+
+    def test_low_stock_zero_qty_is_alerted(self):
+        """สินค้าที่หมดสต๊อก (qty=0) ต้องอยู่ใน low stock list"""
+        inv = {"X": {"n": "Gone", "q": 0, "p": 10.0, "c": "T"}}
+        _, _, low = calc_summary(inv)
+        assert "Gone" in low
+
+    def test_no_low_stock_when_all_sufficient(self):
+        """ไม่แจ้งเตือนเมื่อทุกชิ้นมี qty >= 10"""
+        inv = {
+            "A": {"n": "Plenty1", "q": 10,  "p": 1.0, "c": "T"},
+            "B": {"n": "Plenty2", "q": 100, "p": 1.0, "c": "T"},
+        }
+        _, _, low = calc_summary(inv)
+        assert len(low) == 0
+
+    def test_all_low_stock_when_all_depleted(self):
+        """แจ้งเตือนทุกชิ้นเมื่อทุกชิ้นมี qty < 10"""
+        inv = {
+            "A": {"n": "Item1", "q": 1, "p": 1.0, "c": "T"},
+            "B": {"n": "Item2", "q": 5, "p": 1.0, "c": "T"},
+            "C": {"n": "Item3", "q": 0, "p": 1.0, "c": "T"},
+        }
+        _, _, low = calc_summary(inv)
+        assert len(low) == 3
+        assert "Item1" in low
+        assert "Item2" in low
+        assert "Item3" in low
+
+    def test_low_stock_does_not_include_sufficient_items(self):
+        """low stock list ต้องไม่รวมสินค้าที่สต๊อกพอ"""
+        inv = {
+            "A": {"n": "LowItem",  "q": 3,  "p": 1.0, "c": "T"},
+            "B": {"n": "OkayItem", "q": 50, "p": 1.0, "c": "T"},
+        }
+        _, _, low = calc_summary(inv)
+        assert "OkayItem" not in low
