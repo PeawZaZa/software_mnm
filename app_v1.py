@@ -3,6 +3,7 @@ import os
 
 # global variables
 db = "data.json"
+LOW_STOCK = 10 # แก้ไข: เพิ่มตัวแปรคงที่สำหรับกำหนดเกณฑ์สต๊อกต่ำ (ใช้ร่วมกันทั้งเมนู 3 และเมนู 4 เพื่อแก้ INV-9)
 
 def load(inventory):
     """โหลดข้อมูลจากไฟล์ JSON หากไฟล์เสียหรือไม่มีจะโหลดค่าเริ่มต้น"""
@@ -71,11 +72,8 @@ def main():
             e = input("Enter Category: ")
             
             # This logic updates or creates
-            if a in inventory:
-                inventory[a] = {"n": b, "q": qty, "p": d, "c": e}
-            else:
-                inventory[a] = {"n": b, "q": qty, "p": d, "c": e}
-                
+            # แก้ไข: ลบ if/else ที่ทำงานเหมือนกันทิ้ง (INV-8) และเขียนทับ/สร้างใหม่ไปเลย
+            inventory[a] = {"n": b, "q": qty, "p": d, "c": e}
             save(inventory)
             print("Done.")
             
@@ -100,7 +98,7 @@ def main():
                     save(inventory)
                     print("Stock updated.")
                     # Check if running low
-                    if inventory[id_to_cut]['q'] < 5:
+                    if inventory[id_to_cut]['q'] < LOW_STOCK: # แก้ไข: ใช้ค่าคงที่ LOW_STOCK แทนตัวเลข 5 (แก้ INV-9: เกณฑ์ไม่ตรงกันระหว่างเมนู 3 และเมนู 4)
                         print("!!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!")
                 else:
                     print("Error: Not enough stock!")
@@ -111,4 +109,23 @@ def main():
             # Calculate total value and show some alert
             total_items = 0
             total_val = 0.0
-            low_
+            low_stock_list = []
+            
+            for k in inventory:
+                total_items += 1
+                total_val += inventory[k]['q'] * inventory[k]['p']
+                if inventory[k]['q'] < LOW_STOCK: # แก้ไข: ใช้ค่าคงที่ LOW_STOCK แทนตัวเลข 10
+                    low_stock_list.append(inventory[k]['n'])
+                    
+            print(f"Total product types: {total_items}")
+            print(f"Total inventory value: {total_val} THB")
+            print(f"Alert low stock (<{LOW_STOCK}): {', '.join(low_stock_list)}") # แก้ไข: ดึงค่า LOW_STOCK มาแสดงในข้อความแจ้งเตือน
+            
+        elif choice == "5":
+            print("Bye")
+            break
+        else:
+            print("Invalid choice, try again.")
+
+if __name__ == "__main__":
+    main()

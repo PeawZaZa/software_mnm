@@ -134,7 +134,7 @@ def calc_summary(inventory):
     for k in inventory:
         total_items += 1
         total_val += inventory[k]['q'] * inventory[k]['p']
-        if inventory[k]['q'] < 10:
+        if inventory[k]['q'] < app.LOW_STOCK: # แก้ไข: อัปเดตใช้ตัวแปร app.LOW_STOCK
             low_stock_list.append(inventory[k]['n'])
     return total_items, total_val, low_stock_list
 
@@ -255,6 +255,7 @@ def apply_stock_out(inventory, product_id, amt): # แก้ไข: รับพ
 
     ✅ FIX INV-7: เพิ่มเงื่อนไข amt <= 0 ต้องล้มเหลว
     (เดิม q >= amt ผ่านเมื่อ amt เป็นลบหรือศูนย์ ทำให้สต๊อกเพิ่ม/ไม่เปลี่ยนโดยไม่ตั้งใจ)
+    ✅ FIX INV-9: ใช้เกณฑ์ app.LOW_STOCK (=10) แทนเลข 5 hardcode ให้ตรงกับเมนู 4
     """
     if product_id not in inventory: # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
         return False, "Product not found!"
@@ -262,7 +263,7 @@ def apply_stock_out(inventory, product_id, amt): # แก้ไข: รับพ
         return False, "Error: Amount must be positive!"
     if inventory[product_id]['q'] >= amt: # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
         inventory[product_id]['q'] -= amt # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
-        warning = inventory[product_id]['q'] < 5 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
+        warning = inventory[product_id]['q'] < app.LOW_STOCK # ✅ FIX INV-9: อ้างอิง app.LOW_STOCK แทนเลข 5
         return True, "WARNING" if warning else "Stock updated."
     else:
         return False, "Error: Not enough stock!"
@@ -295,21 +296,21 @@ class TestStockOutMenu:
         assert success is False
         assert "not found" in msg.lower()
 
-    def test_warning_when_qty_below_5_after_cut(self, inventory): # แก้ไข: รับ fixture inventory
-        """ต้องแจ้งเตือนเมื่อสต๊อกหลังตัดน้อยกว่า 5"""
-        inventory["101"]["q"] = 10 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
-        success, msg = apply_stock_out(inventory, "101", 7)  # แก้ไข: ส่ง inventory เข้าไป
+    def test_warning_when_qty_below_LOW_STOCK_after_cut(self, inventory): # แก้ไข: รับ fixture inventory, เปลี่ยนชื่อเทสต์ตาม threshold ใหม่ (INV-9)
+        """ต้องแจ้งเตือนเมื่อสต๊อกหลังตัดน้อยกว่า LOW_STOCK (10)"""
+        inventory["101"]["q"] = 15 # แก้ไข: ปรับสต๊อกตั้งต้นใหม่
+        success, msg = apply_stock_out(inventory, "101", 7)  # เหลือ 8 # แก้ไข: ส่ง inventory เข้าไป
         assert success is True
         assert "WARNING" in msg
-        assert inventory["101"]["q"] == 3 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
+        assert inventory["101"]["q"] == 8 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
 
-    def test_no_warning_when_qty_equals_5(self, inventory): # แก้ไข: รับ fixture inventory
-        """qty = 5 ไม่ต้องแจ้งเตือน (เงื่อนไขคือ < 5 ไม่ใช่ <= 5)"""
-        inventory["101"]["q"] = 10 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
-        success, msg = apply_stock_out(inventory, "101", 5)  # แก้ไข: ส่ง inventory เข้าไป
+    def test_no_warning_when_qty_equals_LOW_STOCK(self, inventory): # แก้ไข: รับ fixture inventory, เปลี่ยนชื่อเทสต์
+        """qty = LOW_STOCK ไม่ต้องแจ้งเตือน (เงื่อนไขคือ < LOW_STOCK ไม่ใช่ <= LOW_STOCK)"""
+        inventory["101"]["q"] = 15 # แก้ไข: ปรับสต๊อกตั้งต้นใหม่
+        success, msg = apply_stock_out(inventory, "101", 5)  # เหลือ 10 # แก้ไข: ส่ง inventory เข้าไป
         assert success is True
-        assert inventory["101"]["q"] == 5 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
-        assert inventory["101"]["q"] >= 5  # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
+        assert inventory["101"]["q"] == 10 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
+        assert inventory["101"]["q"] >= app.LOW_STOCK  # แก้ไข: เทียบกับ app.LOW_STOCK แทนเลข 5
 
     # ── Fixed Bug: Negative Amount (INV-7) ──
 
@@ -374,17 +375,13 @@ class TestAddUpdateMenu:
         apply_add_update(inventory, "X01", "Item", 10, 5.0, "Snack") # แก้ไข: ส่งพารามิเตอร์ inventory
         assert inventory["X01"]["c"] == "Snack" # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
 
-    def test_BUG_INV8_ifelse_identical_behavior(self, inventory): # แก้ไข: รับ fixture inventory
+    def test_INV8_resolved_ifelse_identical_behavior(self, inventory): # แก้ไข: รับ fixture inventory, ลบ BUG_ ออกและเปลี่ยนชื่อเทสต์
         """
-        🐛 BUG INV-8: if/else ทั้งสองกรณีทำงานเหมือนกัน (เขียนทับทุกครั้ง)
-        ไม่ว่าจะเป็น ID ใหม่หรือ ID ที่มีอยู่ → พฤติกรรมเหมือนกัน
-        Requirement จริง: ยังไม่ชัดว่าควร "บวกสต๊อก" หรือ "เขียนทับ"
+        ✔️ FIX INV-8: ลบโค้ด if/else ที่ซ้ำซ้อนออก เหลือพฤติกรรมเดียวคือเขียนทับ (overwrite) เสมอ
+        ทีมยืนยันแล้วว่า overwrite คือพฤติกรรมที่ต้องการ (ไม่ใช่ accumulate)
         """
-        original_qty = inventory["101"]["q"]  # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
         apply_add_update(inventory, "101", inventory["101"]["n"], 1, inventory["101"]["p"], inventory["101"]["c"]) # แก้ไข: ส่งพารามิเตอร์ inventory
-        # BUG: qty ถูกเขียนทับเป็น 1 แทนที่จะบวก (50 + 1 = 51)
-        assert inventory["101"]["q"] == 1, "BUG: qty ถูก overwrite ไม่ใช่ accumulate" # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
-        assert inventory["101"]["q"] != original_qty + 1  # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
+        assert inventory["101"]["q"] == 1, "FIXED: qty ถูก overwrite ตามที่ตั้งใจ" # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
 
 # ══════════════════════════════════════════════════
 # SECTION 5: Known Inconsistencies
@@ -392,21 +389,18 @@ class TestAddUpdateMenu:
 
 class TestKnownInconsistencies:
 
-    def test_BUG_INV9_threshold_mismatch_between_menus(self):
+    def test_INV9_resolved_threshold_mismatch_between_menus(self): # แก้ไข: ลบ BUG_ ออกและเปลี่ยนชื่อเทสต์
         """
-        🐛 BUG INV-9: เมนู 3 ใช้ < 5 แต่เมนู 4 ใช้ < 10
-        qty=7 → เมนู 4 แจ้งเตือน แต่เมนู 3 ไม่แจ้งเตือน
-        ต้องถูกกำหนดเป็นค่าคงที่เดียวกัน (LOW_STOCK_THRESHOLD)
-        """
+        ✔️ FIX INV-9: เมนู 3 และ 4 ใช้เกณฑ์เดียวกันคือค่าคงที่ LOW_STOCK
+        """ # แก้ไข: อัปเดต docstring
         qty = 7
-        MENU3_THRESHOLD = 5
-        MENU4_THRESHOLD = 10
+        MENU3_THRESHOLD = app.LOW_STOCK # แก้ไข: อ้างอิงจาก app.LOW_STOCK
+        MENU4_THRESHOLD = app.LOW_STOCK # แก้ไข: อ้างอิงจาก app.LOW_STOCK
         is_low_in_menu3 = qty < MENU3_THRESHOLD
         is_low_in_menu4 = qty < MENU4_THRESHOLD
         assert is_low_in_menu4 is True,  "เมนู 4: qty=7 ควรแจ้งเตือน"
-        assert is_low_in_menu3 is False, "เมนู 3: qty=7 ไม่แจ้งเตือน"
-        assert is_low_in_menu3 != is_low_in_menu4, \
-            "BUG: พฤติกรรมต่างกัน — ต้องแก้ INV-9 เพื่อให้ตรงกัน"
+        assert is_low_in_menu3 is True, "เมนู 3: qty=7 ต้องแจ้งเตือนเช่นกัน" # แก้ไข: ปรับ expected เป็น True
+        assert is_low_in_menu3 == is_low_in_menu4, "FIXED: พฤติกรรมตรงกันแล้ว" # แก้ไข: ปรับ expected เป็น ==
 
     def test_default_inventory_ids_are_strings(self, inventory): # แก้ไข: รับ fixture inventory
         """ล็อก: product ID ต้องเป็น string ไม่ใช่ int"""
