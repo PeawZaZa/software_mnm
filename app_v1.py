@@ -3,28 +3,29 @@ import os
 
 # global variables
 db = "data.json"
-x = {}
+# แก้ไข: ลบตัวแปร global x ออกจากตรงนี้
 
-def load(inventory): # แก้ไข: ให้ฟังก์ชันรับพารามิเตอร์ inventory
-    global x
+def load(inventory):
+    # แก้ไข: ลบ global x ออกจากฟังก์ชัน
     if os.path.exists(db):
         with open(db, 'r') as f:
-            inventory.update(json.load(f)) # แก้ไข: เปลี่ยนมาใช้วิธี update ข้อมูลลงใน inventory
+            inventory.update(json.load(f))
     else:
         # default data if file not found
-        default_data = { # แก้ไข: สร้างตัวแปรเก็บข้อมูลเริ่มต้น
+        default_data = {
             "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"},
             "102": {"n": "Lactasoy Milk", "q": 20, "p": 12.0, "c": "Drink"},
             "103": {"n": "Singha Water", "q": 100, "p": 10.0, "c": "Drink"}
         }
-        inventory.update(default_data) # แก้ไข: update ข้อมูลเริ่มต้นลงใน inventory
+        inventory.update(default_data)
 
-def save(inventory): # แก้ไข: ให้ฟังก์ชันรับพารามิเตอร์ inventory
+def save(inventory):
     with open(db, 'w') as f:
-        json.dump(inventory, f) # แก้ไข: เซฟข้อมูลจากพารามิเตอร์ inventory
+        json.dump(inventory, f)
 
 def main():
-    load(x) # แก้ไข: ส่ง x เป็นพารามิเตอร์ให้ load
+    x = {} # แก้ไข: ประกาศตัวแปร x ให้อยู่ภายในฟังก์ชัน main
+    load(x)
     while True:
         print("\n=== INVENTORY SYSTEM v1.0 ===")
         print("1. Show all")
@@ -54,7 +55,7 @@ def main():
                 x[a] = {"n": b, "q": c, "p": d, "c": e}
             else:
                 x[a] = {"n": b, "q": c, "p": d, "c": e}
-            save(x) # แก้ไข: ส่ง x เป็นพารามิเตอร์ให้ save
+            save(x)
             print("Done.")
             
         elif choice == "3":
@@ -64,7 +65,7 @@ def main():
                 amt = int(input("How many items out?: "))
                 if x[id_to_cut]['q'] >= amt:
                     x[id_to_cut]['q'] = x[id_to_cut]['q'] - amt
-                    save(x) # แก้ไข: ส่ง x เป็นพารามิเตอร์ให้ save
+                    save(x)
                     print("Stock updated.")
                     # Check if running low
                     if x[id_to_cut]['q'] < 5:
