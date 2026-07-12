@@ -1,47 +1,103 @@
 # System Architecture Document
-## Project: Inventory System
-**Version:** 1.1
+## Inventory System v2.0
+
+| # | ชื่อ | ตำแหน่ง |
+|---|---|---|
+| 1 | ปวริศ คูณศรี | Project Manager |
+| 2 | พนาวุฒน์ อภิปสันติ| Tech Lead |
+| 3 | ตรัยรัตน์ วงษ์สิทธิ์ | QA / Tester |
+| 4 | ทวีชัย ทิใจ | Developer |
 
 ---
 
-### 1. ภาพรวมของระบบ (System Overview)
-ระบบ Inventory System เป็นแอปพลิเคชันประเภท Command Line Interface (CLI) ที่พัฒนาด้วยภาษา Python เพื่อใช้จัดการคลังสินค้าขนาดเล็ก ตัวระบบเน้นความเรียบง่ายและทำงานแบบ Standalone รองรับการทำงานพื้นฐาน เช่น การดูรายการสินค้า, การเพิ่ม/แก้ไขข้อมูล, การตัดสต๊อก, และการสรุปมูลค่าคลังสินค้า
+## 1. ภาพรวมระบบ
 
-### 2. สถาปัตยกรรมข้อมูล (Data Architecture)
-* **Data Structure:** ข้อมูลจะถูกโหลดขึ้นมาทำงานในหน่วยความจำ (In-Memory) ด้วยโครงสร้างข้อมูลแบบ Dictionary (`dict`) โดยใช้รหัสสินค้า (Product ID) เป็น Key หลัก
-* **Data Schema:** ```json
-  "Product_ID": {
-      "n": "ชื่อสินค้า (Name)",
-      "q": จำนวนคงเหลือ (Quantity - Int),
-      "p": ราคา (Price - Float),
-      "c": หมวดหมู่ (Category)
-  }
-Data Persistence: ระบบใช้ Text-based storage โดยเขียน/อ่านข้อมูลจากไฟล์ data.json โดยตรง
+ระบบ CLI จัดการคลังสินค้าเบื้องต้น รันผ่าน Terminal รับ input จากผู้ใช้และเก็บข้อมูลในไฟล์ JSON
 
-3. โครงสร้างคอมโพเนนต์ (System Components)
-ระบบถูกออกแบบให้ลดการพึ่งพาสถานะส่วนกลาง (Global State) โดยแบ่งการทำงานออกเป็น 3 ส่วนหลัก:
+```
+User → main() → inventory (dict) → save() → data.json
+                      ↑
+                   load() ← data.json (ตอนเริ่มโปรแกรม)
+```
 
-State & Event Controller (main)
+---
 
-ทำหน้าที่เป็น Application Entry Point และจัดการ Event Loop (UI/Menu)
+## 2. โครงสร้างฟังก์ชัน (v2.0)
 
-เป็นจุดประกาศตัวแปร State หลัก (inventory = {}) และส่งผ่านพารามิเตอร์ตัวนี้ไปยังฟังก์ชันอื่นๆ (Dependency Injection) เพื่อป้องกัน Side Effects
+| ฟังก์ชัน | หน้าที่ | Parameter | Return |
+|---|---|---|---|
+| `load(inventory)` | อ่านข้อมูลจาก `data.json` เข้า dict | `inventory: dict` | None |
+| `save(inventory)` | เขียน dict ลงไฟล์แบบ atomic | `inventory: dict` | None |
+| `main()` | event loop + menu routing | — | None |
 
-File I/O Services (load, save)
+---
 
-load(inventory): ดึงข้อมูลจากไฟล์ data.json หากไม่พบไฟล์จะทำการ Inject ข้อมูลพื้นฐาน (Default Data) เข้าไปในระบบแทน
+## 3. Data Structure
 
-save(inventory): อัปเดตสถานะของ Inventory จากหน่วยความจำลงสู่ไฟล์ JSON (ทำงานแบบ Overwrite)
+```python
+inventory = {
+    "101": {
+        "n": str,    # ชื่อสินค้า
+        "q": int,    # จำนวนคงเหลือ
+        "p": float,  # ราคาต่อหน่วย (THB)
+        "c": str     # หมวดหมู่
+    }
+}
+```
 
-Business Logic Layer (ภายในเมนูย่อย)
+**ค่าคงที่:**
+```python
+LOW_STOCK = 10   # เกณฑ์แจ้งเตือนสต๊อกต่ำ (ใช้ร่วมกันทั้งเมนู 3 และ 4)
+db = "data.json" # path ของไฟล์ฐานข้อมูล
+```
 
-Stock Management: จัดการคำนวณการบวก/ลบสินค้าแบบ Real-time พร้อม Validation แจ้งเตือนเมื่อสต๊อกไม่พอ
+---
 
-Alert System: ระบบแจ้งเตือนสต๊อกต่ำ ควบคุมด้วยค่าคงที่ส่วนกลาง LOW_STOCK = 10 เพื่อให้ทุกโมดูลประเมินผลผ่านเกณฑ์เดียวกัน
+## 4. Data Flow (v2.0)
 
-4. สรุปการปรับปรุงจากเวอร์ชันก่อนหน้า (v1.1 Changes)
-Eliminate Global State: ยกเลิกการใช้ global x และปรับให้ฟังก์ชันรับพารามิเตอร์แทน เพิ่มความปลอดภัยให้กับข้อมูลในระบบ
+```
+เริ่มโปรแกรม
+    └── main()
+         └── load(inventory)
+              ├── มีไฟล์ → json.load() → inventory.update()
+              └── ไม่มีไฟล์ / เสียหาย → default data → inventory.update()
 
-Logic Streamlining: แก้ไขปัญหาการใช้เงื่อนไขแบบ Dead Code ในระบบ Add/Update สินค้า
+เมนู 1 (Show All)
+    └── อ่าน inventory → print (ไม่แก้ไข)
 
-Single Source of Truth: รวมศูนย์เกณฑ์การแจ้งเตือนสต๊อกต่ำให้เป็นมาตรฐานเดียวกันทั้งระบบ (INV-9)
+เมนู 2 (Add/Update)
+    └── รับ input → validate (try/except) → inventory[id] = {...} → save(inventory)
+
+เมนู 3 (Stock Out)
+    └── รับ input → validate amt > 0 → inventory[id]['q'] -= amt → save(inventory)
+         └── if q < LOW_STOCK → WARNING
+
+เมนู 4 (Inventory Summary)
+    └── วนลูป inventory → คำนวณ total_val, low_stock_list (q < LOW_STOCK) → print
+
+save(inventory)
+    └── เขียนลง data.json.tmp → os.replace() → data.json
+```
+
+---
+
+## 5. การเปลี่ยนแปลงจาก v1.0 → v2.0
+
+| จุด | v1.0 | v2.0 |
+|---|---|---|
+| State management | `global x` | `inventory` dict ส่งผ่าน parameter |
+| Input validation | ไม่มี | `try/except ValueError` ทุกจุด |
+| Negative stock cut | ผ่านได้ | ตรวจ `amt <= 0` ก่อน |
+| File write | เขียนทับตรง | Atomic write ผ่าน `.tmp` |
+| File read error | crash | `try/except` → โหลด default |
+| Low stock threshold | เมนู 3 ใช้ 5, เมนู 4 ใช้ 10 | `LOW_STOCK = 10` ทั้งคู่ |
+| เมนู 4 ชื่อ | "Check Check" | "Inventory Summary" |
+
+---
+
+## 6. ข้อจำกัดที่ยังมีอยู่ (Known Limitations)
+
+- ไม่มี Authentication / Authorization
+- ไม่มีฐานข้อมูลจริง (ใช้ JSON file แทน)
+- ไม่รองรับ concurrent access (ใช้คนเดียวได้)
+- ไม่มี GUI — เป็น CLI เท่านั้น
