@@ -43,16 +43,16 @@ def main():
         elif choice == "2":
             a = input("Enter ID: ")
             b = input("Enter Name: ")
-            c = int(input("Enter Qty: "))
+            qty = int(input("Enter Qty: ")) # [INV-5] เปลี่ยนตัวแปร c เป็น qty เพื่อไม่ให้สับสนกับ key "c"
             d = float(input("Enter Price: "))
             e = input("Enter Category: ")
             
             # This logic updates or creates
             if a in x:
                 # if already have, just add qty? or overwrite? Let's overwrite!
-                x[a] = {"n": b, "q": c, "p": d, "c": e}
+                x[a] = {"n": b, "q": qty, "p": d, "c": e} # [INV-5] ใช้ qty แทน c
             else:
-                x[a] = {"n": b, "q": c, "p": d, "c": e}
+                x[a] = {"n": b, "q": qty, "p": d, "c": e} # [INV-5] ใช้ qty แทน c
             save()
             print("Done.")
             
