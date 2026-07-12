@@ -39,7 +39,7 @@ def main():
         print("1. Show all")
         print("2. Add or Update")
         print("3. Out")
-        print("4. Check Check")
+        print("4. Inventory Summary") # [INV-12] เปลี่ยนชื่อจาก Check Check เป็น Inventory Summary
         print("5. Exit")
         choice = input("Select menu: ")
         
