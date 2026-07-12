@@ -85,7 +85,7 @@ class TestSaveFunction:
 
     def test_save_creates_file(self, temp_db, inventory): # แก้ไข: รับ fixture inventory
         """save() ต้องสร้างไฟล์ data.json"""
-        app.save(inventory) # แก้ไข: ส่ง inventory เป็นพารามิเตอร์
+        app.save(inventory) # แก้ไข: ส่ง inventory เป็นพารามิเตอร์ (ทั้งไฟล์ใช้ signature นี้ตรงกัน)
         assert os.path.exists(temp_db)
 
     def test_save_writes_correct_data(self, temp_db, inventory): # แก้ไข: รับ fixture inventory
@@ -252,9 +252,14 @@ def apply_stock_out(inventory, product_id, amt): # แก้ไข: รับพ
     """
     จำลอง logic เมนู 3 (Out) — L.55-70 ใน app_v1.py
     คืนค่า (success: bool, message: str)
+
+    ✅ FIX INV-7: เพิ่มเงื่อนไข amt <= 0 ต้องล้มเหลว
+    (เดิม q >= amt ผ่านเมื่อ amt เป็นลบหรือศูนย์ ทำให้สต๊อกเพิ่ม/ไม่เปลี่ยนโดยไม่ตั้งใจ)
     """
     if product_id not in inventory: # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
         return False, "Product not found!"
+    if amt <= 0: # ✅ FIX INV-7: ปฏิเสธจำนวนที่เป็นลบหรือศูนย์
+        return False, "Error: Amount must be positive!"
     if inventory[product_id]['q'] >= amt: # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
         inventory[product_id]['q'] -= amt # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
         warning = inventory[product_id]['q'] < 5 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
@@ -306,29 +311,24 @@ class TestStockOutMenu:
         assert inventory["101"]["q"] == 5 # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
         assert inventory["101"]["q"] >= 5  # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
 
-    # ── Known Bug: Negative Amount ──
+    # ── Fixed Bug: Negative Amount (INV-7) ──
 
-    def test_BUG_INV7_negative_amount_passes_condition(self, inventory): # แก้ไข: รับ fixture inventory
+    def test_INV7_negative_amount_rejected(self, inventory): # แก้ไข: รวม conflict, เปลี่ยนชื่อจาก test_BUG_ เป็น test_ เพราะบั๊กถูกแก้แล้ว
         """
-        🐛 BUG INV-7: เงื่อนไข q >= amt ผ่านเมื่อ amt เป็นลบ
-        50 >= -5 → True → สต๊อกเพิ่มแทนที่จะลด
+        ✅ FIX INV-7: เงื่อนไขต้องล้มเหลวเมื่อ amt เป็นลบ
+        (อัปเดตตาม commit: test(qa): update BUG_INV7 test after fix)
+        """
+        success, _ = apply_stock_out(inventory, "101", -5) # แก้ไข: ต้องส่ง inventory เป็นพารามิเตอร์แรกให้ตรงกับ signature ปัจจุบัน
+        assert success is False, "ควรล้มเหลวเมื่อ amt เป็นลบ"
+        assert inventory["101"]["q"] == 50, \
+            f"สต๊อกต้องคงที่เป็น 50 แต่เปลี่ยนเป็น {inventory['101']['q']}" # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
 
-        ❗ หลัง fix INV-7 แล้ว test นี้ต้องถูกอัปเดต:
-            assert success is False
-            assert app.x["101"]["q"] == 50
+    def test_INV7_zero_amount_rejected(self, inventory): # แก้ไข: รวม conflict, เปลี่ยนชื่อจาก test_BUG_ เป็น test_ เพราะบั๊กถูกแก้แล้ว
         """
-        success, _ = apply_stock_out(inventory, "101", -5) # แก้ไข: ส่ง inventory เข้าไป
-        # พฤติกรรมปัจจุบัน (บั๊ก): ผ่านและสต๊อกเพิ่ม
-        assert success is True, "BUG: ควรล้มเหลวเมื่อ amt เป็นลบ"
-        assert inventory["101"]["q"] == 55, \
-            f"BUG: สต๊อกเพิ่มเป็น {inventory['101']['q']} แทนที่จะคงที่" # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
-
-    def test_BUG_INV7_zero_amount_passes(self, inventory): # แก้ไข: รับ fixture inventory
-        """
-        🐛 BUG INV-7 (ส่วนขยาย): ตัดด้วย 0 ก็ผ่าน — สต๊อกไม่เปลี่ยนแต่บันทึกไฟล์โดยไม่จำเป็น
+        ✅ FIX INV-7 (ส่วนขยาย): ตัดด้วย 0 ต้องไม่ผ่าน (ล้มเหลว)
         """
         success, _ = apply_stock_out(inventory, "101", 0) # แก้ไข: ส่ง inventory เข้าไป
-        assert success is True  # ผ่านโดยไม่ควร
+        assert success is False, "ควรล้มเหลวเมื่อ amt เป็น 0"
         assert inventory["101"]["q"] == 50  # แก้ไข: เปลี่ยนจาก app.x เป็น inventory
 
 

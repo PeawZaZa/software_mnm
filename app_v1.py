@@ -72,7 +72,6 @@ def main():
             
             # This logic updates or creates
             if a in inventory:
-                # if already have, just add qty? or overwrite? Let's overwrite!
                 inventory[a] = {"n": b, "q": qty, "p": d, "c": e}
             else:
                 inventory[a] = {"n": b, "q": qty, "p": d, "c": e}
@@ -84,11 +83,16 @@ def main():
             # Cut stock
             id_to_cut = input("Enter product ID to cut stock: ")
             if id_to_cut in inventory:
-                # [INV-6] ดักการรับค่าตัวเลข
+                # [INV-6] ดักการรับค่าตัวอักษร
                 try:
                     amt = int(input("How many items out?: "))
                 except ValueError:
                     print("Invalid input: Amount must be a number.")
+                    continue
+                
+                # fix(menu3): reject negative and zero amount input [INV-7]
+                if amt <= 0:
+                    print("Error: Amount must be greater than zero!")
                     continue
                     
                 if inventory[id_to_cut]['q'] >= amt:
@@ -107,23 +111,4 @@ def main():
             # Calculate total value and show some alert
             total_items = 0
             total_val = 0.0
-            low_stock_list = []
-            
-            for k in inventory:
-                total_items += 1
-                total_val += inventory[k]['q'] * inventory[k]['p']
-                if inventory[k]['q'] < 10:
-                    low_stock_list.append(inventory[k]['n'])
-                    
-            print(f"Total product types: {total_items}")
-            print(f"Total inventory value: {total_val} THB")
-            print(f"Alert low stock (<10): {', '.join(low_stock_list)}")
-            
-        elif choice == "5":
-            print("Bye")
-            break
-        else:
-            print("Invalid choice, try again.")
-
-if __name__ == "__main__":
-    main()
+            low_
