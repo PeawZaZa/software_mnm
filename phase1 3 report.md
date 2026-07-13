@@ -2,7 +2,7 @@
 ## RACI Matrix + Definition of Done (DoD) + GitHub Setup Guide
 ### Inventory System v1.0
 
-**กลุ่ม:** ___________________ | **วันที่:** ___________________
+
 
 ---
 
@@ -53,34 +53,34 @@
 
 ### 2.1 DoD สำหรับ Bug Fix Task (INV-5, 6, 7, 8, 9, 10, 11, 12)
 
-- [ ] **โค้ดเขียนถูกต้อง** — แก้ไขตรงกับ requirement ที่ระบุในตั๋ว Jira
-- [ ] **Unit Test ผ่าน** — `pytest test_app.py -v` ไม่มี FAILED ทุก test
-- [ ] **ไม่มี Regression** — test ทั้งหมดที่มีอยู่เดิมยังผ่าน (ไม่ใช่แค่ test ใหม่)
-- [ ] **Code Review ผ่าน** — Tech Lead ตรวจและ Approve PR แล้ว
-- [ ] **ไม่มี merge conflict** — branch อัปเดตจาก `develop` ล่าสุดแล้ว
-- [ ] **Commit message ชัดเจน** — ระบุว่าแก้อะไร อ้างอิง INV-XX
-- [ ] **ลบ debug code** — ไม่มี `print()` หรือ comment ที่ไม่จำเป็นหลงเหลือ
+- [x] **โค้ดเขียนถูกต้อง** — แก้ไขตรงกับ requirement ที่ระบุในตั๋ว Jira
+- [x] **Unit Test ผ่าน** — `pytest test_app.py -v` ไม่มี FAILED ทุก test
+- [x] **ไม่มี Regression** — test ทั้งหมดที่มีอยู่เดิมยังผ่าน (ไม่ใช่แค่ test ใหม่)
+- [x] **Code Review ผ่าน** — Tech Lead ตรวจและ Approve PR แล้ว
+- [x] **ไม่มี merge conflict** — branch อัปเดตจาก `develop` ล่าสุดแล้ว
+- [x] **Commit message ชัดเจน** — ระบุว่าแก้อะไร อ้างอิง INV-XX
+- [x] **ลบ debug code** — ไม่มี `print()` หรือ comment ที่ไม่จำเป็นหลงเหลือ
 
 ### 2.2 DoD สำหรับ Test Task (INV-13, 14)
 
-- [ ] **Test coverage ครอบคลุม** — ทุก menu มี test อย่างน้อย 3 กรณี (happy path, edge case, error case)
-- [ ] **Known bugs มี test ล็อกไว้** — ทุก bug ที่รู้แล้วต้องมี test ที่ขึ้นต้นด้วย `test_BUG_`
-- [ ] **Test รันได้ด้วย** `pytest test_app.py -v` ไม่มี ERROR
-- [ ] **Test isolate กัน** — แต่ละ test ไม่พึ่งพาลำดับการรัน (ใช้ fixture reset_inventory)
-- [ ] **ไม่ใช้ข้อมูล data.json จริง** — ใช้ temp_db fixture แทน
+- [x] **Test coverage ครอบคลุม** — ทุก menu มี test อย่างน้อย 3 กรณี (happy path, edge case, error case)
+- [x] **Known bugs มี test ล็อกไว้** — ทุก bug ที่รู้แล้วต้องมี test ที่ขึ้นต้นด้วย `test_BUG_`
+- [x] **Test รันได้ด้วย** `pytest test_app.py -v` ไม่มี ERROR
+- [x] **Test isolate กัน** — แต่ละ test ไม่พึ่งพาลำดับการรัน (ใช้ fixture reset_inventory)
+- [x] **ไม่ใช้ข้อมูล data.json จริง** — ใช้ temp_db fixture แทน
 
 ### 2.3 DoD สำหรับ Documentation Task (INV-15, 16)
 
-- [ ] **ครอบคลุมทุกส่วนที่เปลี่ยนแปลง** — ทุก function ที่แก้ไขมีอธิบายใหม่
-- [ ] **อ่านเข้าใจได้โดยคนนอกทีม** — ตรวจโดย PM
-- [ ] **เขียนเป็น Markdown** — push ขึ้น repo ได้เลย
+- [x] **ครอบคลุมทุกส่วนที่เปลี่ยนแปลง** — ทุก function ที่แก้ไขมีอธิบายใหม่
+- [x] **อ่านเข้าใจได้โดยคนนอกทีม** — ตรวจโดย PM
+- [x] **เขียนเป็น Markdown** — push ขึ้น repo ได้เลย
 
 ### 2.4 DoD สำหรับ Sprint (ภาพรวม)
 
-- [ ] **ทุก INV-XX ที่อยู่ใน Sprint มีสถานะ Done** — ไม่มี "In Progress" ค้างข้าม Sprint
-- [ ] **Jira board อัปเดตครบ** — ทุก task มี Assignee, ไม่มีที่ว่างเปล่า
-- [ ] **develop branch สะอาด** — ไม่มี merge conflict, CI ผ่าน (ถ้ามี)
-- [ ] **Sprint Review ทำแล้ว** — ทีมนำเสนอสิ่งที่ทำสำเร็จในรอบนี้
+- [x] **ทุก INV-XX ที่อยู่ใน Sprint มีสถานะ Done** — ไม่มี "In Progress" ค้างข้าม Sprint
+- [x] **Jira board อัปเดตครบ** — ทุก task มี Assignee, ไม่มีที่ว่างเปล่า
+- [x] **develop branch สะอาด** — ไม่มี merge conflict, CI ผ่าน (ถ้ามี)
+- [x] **Sprint Review ทำแล้ว** — ทีมนำเสนอสิ่งที่ทำสำเร็จในรอบนี้
 
 ---
 
@@ -198,12 +198,12 @@ Thumbs.db
 
 ## Checklist ก่อนส่ง
 
-- [ ] ลิงก์ GitHub Repository: `https://github.com/_______________`
-- [ ] Branch `develop` สร้างแล้วและมี commit อย่างน้อย 1 รายการ
-- [ ] แต่ละสมาชิกมี `feature/` branch ของตัวเองอย่างน้อย 1 อัน
-- [ ] ไฟล์ `test_app.py` push ขึ้น repo แล้วและ pytest ผ่านทุก test
-- [ ] RACI Matrix กรอกชื่อจริงของสมาชิกในแต่ละบทบาทแล้ว
-- [ ] DoD copy ไปติดใน Jira board (Description ของ Sprint) แล้ว
+- [x] ลิงก์ GitHub Repository: `https://github.com/PeawZaZa/software_mnm'`
+- [x] Branch `develop` สร้างแล้วและมี commit อย่างน้อย 1 รายการ
+- [x] แต่ละสมาชิกมี `feature/` branch ของตัวเองอย่างน้อย 1 อัน
+- [x] ไฟล์ `test_app.py` push ขึ้น repo แล้วและ pytest ผ่านทุก test
+- [x] RACI Matrix กรอกชื่อจริงของสมาชิกในแต่ละบทบาทแล้ว
+- [] DoD copy ไปติดใน Jira board (Description ของ Sprint) แล้ว
 
 ---
 *อ้างอิงจาก System Understanding Report — Code Archaeology Week 1 และ Project Charter Phase 1.1*
