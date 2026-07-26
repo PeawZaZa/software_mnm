@@ -1,2 +1,21 @@
-*__pycache__
-*.pytest_cache
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data — ห้าม commit ข้อมูลจริง
+data.json
+data.json.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
