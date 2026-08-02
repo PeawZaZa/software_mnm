@@ -2,9 +2,15 @@
 
 **Project:** Inventory System v2.0
 
-**Date:** `$$ ระบุวันที่ $$`
 
-**Team Members:** `$$ ระบุชื่อสมาชิก $$`
+
+**Team Members:**  
+| # | ชื่อ | ตำแหน่ง |
+|---|---|---|
+| 1 | ปวริศ คูณศรี | Project Manager |
+| 2 | พนาวุฒน์ อภิปสันติ| Tech Lead |
+| 3 | ตรัยรัตน์ วงษ์สิทธิ์ | QA / Tester |
+| 4 | ทวีชัย ทิใจ | Developer |
 
 ---
 
@@ -72,39 +78,43 @@ flowchart TD
 
 ```mermaid
 classDiagram
-    class Product {
-        +String id
-        +String name
-        +int qty
-        +float price
-        +String category
-        +to_dict() dict
-        +from_dict(dict) Product$
-    }
+class Product {
+    +String id
+    +String name
+    +int qty
+    +float price
+    +String category
+    +to_dict() dict
+    +from_dict(dict) Product$
+}
 
-    class InventorySystem {
-        -String db_path
-        -Dict data
-        +load_data()
-        +save_data()
-        +add_or_update_product(Product)
-        +cut_stock(String id, int qty) boolean
-        +get_all_products() Dict
-        +get_inventory_summary() Dict
-    }
+class InventorySystem {
+    -String db_path
+    -Dict data
+    +load_data()
+    +save_data()
+    +add_or_update_product(Product)
+    +cut_stock(String id, int qty) boolean
+    +get_all_products() Dict
+    +get_inventory_summary() Dict
+}
 
-    class CLI_View {
-        -InventorySystem system
-        +display_menu()
-        +prompt_add_product()
-        +prompt_cut_stock()
-        +show_summary()
-        +run()
-    }
+class CLI_View {
+    -InventorySystem system
+    +display_menu()
+    +prompt_add_product()
+    +prompt_cut_stock()
+    +show_summary()
+    +run()
+}
 
-    CLI_View --> InventorySystem : Controller / Use
-    InventorySystem *-- Product : Manages
-    InventorySystem --> "data.json" : Read/Write
+class DataFile {
+    <<file>>
+}
+
+CLI_View --> InventorySystem : Controller / Use
+InventorySystem *-- Product : Manages
+InventorySystem --> DataFile : Read/Write
 ```
 
 **Design Patterns Applied:**
@@ -151,8 +161,11 @@ classDiagram
 ---
 
 ## 6. Jira Dashboard Evidence (ส่วนที่ต้องเติมเอง)
+<img width="1271" height="788" alt="image" src="https://github.com/user-attachments/assets/9814e837-c8b9-43b4-8998-d94f0d243201" />
+<img width="1271" height="784" alt="image" src="https://github.com/user-attachments/assets/5b700dab-fba6-49e4-a922-bda31ec10903" />
+<img width="1276" height="787" alt="image" src="https://github.com/user-attachments/assets/d4dc28cf-1a1a-4e1c-b6ba-8636b518da14" />
+<img width="1638" height="854" alt="image" src="https://github.com/user-attachments/assets/d24d72e9-2f47-40f8-8f6a-80ca62d17df4" />
 
-![alt text](image.png)
-![alt text](image-2.png)
-![alt text](image-3.png)
-![alt text](image-1.png)
+
+
+
