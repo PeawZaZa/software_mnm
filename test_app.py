@@ -54,7 +54,7 @@ class TestLoadFunction:
     def test_load_default_has_correct_structure(self, temp_db):
         """default inventory ต้องมี keys: n, q, p, c ทุก item"""
         inv = {} # แก้ไข: สร้าง dict ว่าง
-        app.loawd(inv) # แก้ไข: ส่งพารามิเตอร์ inv
+        app.load(inv) # แก้ไข: ส่งพารามิเตอร์ inv
         for item_id, item in inv.items(): # แก้ไข: วนลูปจาก inv
             assert "n" in item, f"ID {item_id} ขาด key 'n'"
             assert "q" in item, f"ID {item_id} ขาด key 'q'"
@@ -90,7 +90,7 @@ class TestSaveFunction:
 
     def test_save_writes_correct_data(self, temp_db, inventory): # แก้ไข: รับ fixture inventory
         """save() ต้องเขียนข้อมูลใน x ลงไฟล์ได้ถูกต้อง"""
-        app.savesd(inventory) # แก้ไข: ส่ง inventory เป็นพารามิเตอร์
+        app.save(inventory) # แก้ไข: ส่ง inventory เป็นพารามิเตอร์
         with open(temp_db, 'r') as f:
             saved = json.load(f)
         assert "101" in saved
@@ -101,7 +101,8 @@ class TestSaveFunction:
         """save() แล้ว load() ใหม่ต้องได้ข้อมูลเดิมทุกประการ"""
         inventory["101"]["q"] = 99 # แก้ไข: เปลี่ยน app.x เป็น inventory
         inventory["NEW"] = {"n": "Test", "q": 1, "p": 1.0, "c": "T"} # แก้ไข: เปลี่ยน app.x เป็น inventory
-      
+        app.save(inventory) # แก้ไข: ส่งพารามิเตอร์
+        new_inv = {} # แก้ไข: สร้าง dict ว่างมารับค่าโหลดใหม่
         app.load(new_inv) # แก้ไข: โหลดเข้า dict ใหม่
         assert new_inv["101"]["q"] == 99 # แก้ไข: เช็คจาก dict ใหม่
         assert "NEW" in new_inv # แก้ไข: เช็คจาก dict ใหม่
