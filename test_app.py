@@ -11,7 +11,7 @@
 import pytest
 import json
 import os
-import app_v1 as app  # ← ไฟล์โค้ดหลัก (app_v1.py อยู่ใน folder เดียวกัน)
+import app_v2 as app  # ← ไฟล์โค้ดหลัก (app_v1.py อยู่ใน folder เดียวกัน)
 
 
 # ══════════════════════════════════════════════════
