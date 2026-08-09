@@ -1,0 +1,32 @@
+name: Python Tests
+
+on:
+  push:
+    branches: [ "develop" ]
+  pull_request:
+    branches: [ "develop" ]
+
+jobs:
+  test:
+    # ชื่อนี้แหละที่จะไปโผล่ใน Status Check
+    name: PyTest CI 
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10' # เปลี่ยนเวอร์ชันให้ตรงกับที่เรียนได้ครับ
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest
+        # ถ้ามีไฟล์ requirements.txt ให้ลบเครื่องหมาย # บรรทัดล่างออก
+        # pip install -r requirements.txt
+        
+    - name: Run PyTest
+      run: |
+        pytest
