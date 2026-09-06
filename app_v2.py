@@ -125,22 +125,6 @@ class InventoryService:
         return total_items, float(total_val), low_stock_list
 
 
-# ── Backward-compatible wrappers ──
-# test_app.py (regression suite ของ Sprint 1) ยังเรียก API ระดับโมดูลอยู่
-# จึงคง signature เดิมไว้ แล้ว delegate ให้ InventoryRepository
-
-LOW_STOCK = InventoryService.LOW_STOCK # alias ให้โค้ด/เทสต์เดิมที่อ้าง app_v2.LOW_STOCK
-
-def load(inventory):
-    """โหลดข้อมูลเข้า dict รูปแบบเดิม (key ย่อ n/q/p/c)"""
-    loaded = InventoryRepository(db).load()
-    inventory.update({pid: product.to_dict() for pid, product in loaded.items()})
-
-def save(inventory):
-    """บันทึก dict รูปแบบเดิมลงไฟล์"""
-    products = {pid: Product.from_dict(pid, item) for pid, item in inventory.items()}
-    InventoryRepository(db).save(products)
-
 class ConsoleUI:
     """[SAM1-37] ชั้นติดต่อผู้ใช้ — รับ input, พิมพ์ผล และ route ไปยัง service เท่านั้น"""
 
@@ -153,7 +137,7 @@ class ConsoleUI:
     def run(self):
         while True:
             self.print("")
-            self.print("=== INVENTORY SYSTEM v2.0 ===")
+            self.print("=== INVENTORY SYSTEM v2.1 ===")
             self.print("1. Show all")
             self.print("2. Add or Update")
             self.print("3. Out")
@@ -213,6 +197,22 @@ class ConsoleUI:
         self.print(f"Total inventory value: {total_val} THB")
         self.print(f"Alert low stock (<{self.service.LOW_STOCK}): {', '.join(low_stock_list)}")
 
+
+# ── Backward-compatible wrappers ──
+# test_app.py (regression suite ของ Sprint 1) ยังเรียก API ระดับโมดูลอยู่
+# จึงคง signature เดิมไว้ แล้ว delegate ให้ InventoryRepository
+
+LOW_STOCK = InventoryService.LOW_STOCK # alias ให้โค้ด/เทสต์เดิมที่อ้าง app_v2.LOW_STOCK
+
+def load(inventory):
+    """โหลดข้อมูลเข้า dict รูปแบบเดิม (key ย่อ n/q/p/c)"""
+    loaded = InventoryRepository(db).load()
+    inventory.update({pid: product.to_dict() for pid, product in loaded.items()})
+
+def save(inventory):
+    """บันทึก dict รูปแบบเดิมลงไฟล์"""
+    products = {pid: Product.from_dict(pid, item) for pid, item in inventory.items()}
+    InventoryRepository(db).save(products)
 
 def main():
     ConsoleUI(InventoryService(InventoryRepository(db))).run()
