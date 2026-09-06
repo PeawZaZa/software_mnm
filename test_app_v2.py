@@ -728,3 +728,103 @@ class TestConsoleUIExportCsv:
         ui, outputs = make_ui([str(tmp_path / "no-such-dir" / "out.csv")])
         ui.handle_export()
         assert "Error" in joined(outputs)
+
+
+# ══════════════════════════════════════════════════
+# Bug Bashing fixes — DEF-01 (#20), DEF-02 (#21), DEF-03 (#22)
+# ══════════════════════════════════════════════════
+
+class TestDef01DuplicateBarcode:
+    """#20 — ระบบต้องไม่ยอมให้สินค้าคนละตัวใช้ barcode เดียวกัน"""
+
+    def test_rejects_duplicate_barcode(self, service):
+        service.add_update("A1", "Item A", 10, 1.0, "T", barcode="8850001")
+        ok, msg = service.add_update("A2", "Item B", 10, 1.0, "T", barcode="8850001")
+        assert ok is False
+        assert "8850001" in msg
+        assert "A1" in msg
+
+    def test_duplicate_barcode_is_not_persisted(self, service, repo):
+        service.add_update("A1", "Item A", 10, 1.0, "T", barcode="8850001")
+        service.add_update("A2", "Item B", 10, 1.0, "T", barcode="8850001")
+        assert "A2" not in service.inventory
+        assert "A2" not in repo.load()
+
+    def test_product_may_keep_its_own_barcode_on_update(self, service):
+        """แก้ไขสินค้าตัวเดิมโดยใช้ barcode เดิม ต้องไม่ถูกมองว่าซ้ำกับตัวเอง"""
+        service.add_update("A1", "Item A", 10, 1.0, "T", barcode="8850001")
+        ok, _ = service.add_update("A1", "Item A ปรับราคา", 20, 2.0, "T", barcode="8850001")
+        assert ok is True
+        assert service.inventory["A1"].qty == 20
+
+    def test_blank_barcode_may_repeat(self, service):
+        """สินค้าที่ยังไม่ได้กรอก barcode มีได้หลายตัว ไม่นับว่าซ้ำ"""
+        ok1, _ = service.add_update("B1", "No Barcode 1", 1, 1.0, "T")
+        ok2, _ = service.add_update("B2", "No Barcode 2", 1, 1.0, "T")
+        assert (ok1, ok2) == (True, True)
+
+    def test_barcode_freed_after_owner_changes_it(self, service):
+        """ถ้าเจ้าของเดิมเปลี่ยน barcode ไปแล้ว สินค้าอื่นต้องใช้เลขนั้นได้"""
+        service.add_update("A1", "Item A", 10, 1.0, "T", barcode="8850001")
+        service.add_update("A1", "Item A", 10, 1.0, "T", barcode="8850999")
+        ok, _ = service.add_update("A2", "Item B", 10, 1.0, "T", barcode="8850001")
+        assert ok is True
+
+
+class TestDef02NegativeReorderPoint:
+    """#21 — reorder point ติดลบต้องถูกปฏิเสธ ไม่ใช่บันทึกแล้วละเลย"""
+
+    def test_validate_rejects_negative_reorder_point(self, service):
+        ok, msg = service.validate(1, 1.0, -5)
+        assert ok is False
+        assert "reorder point" in msg.lower()
+
+    def test_validate_accepts_zero_reorder_point(self, service):
+        """0 = ไม่ตั้งจุดสั่งซื้อซ้ำ ถือว่าถูกต้อง"""
+        assert service.validate(1, 1.0, 0)[0] is True
+
+    def test_add_update_rejects_negative_reorder_point(self, service, repo):
+        ok, msg = service.add_update("B2", "Item", 2, 1.0, "T", reorder_point=-5)
+        assert ok is False
+        assert "reorder point" in msg.lower()
+        assert "B2" not in service.inventory
+        assert "B2" not in repo.load()
+
+    def test_ui_reports_negative_reorder_point(self, make_ui, service):
+        ui, outputs = make_ui(["B3", "Item", "2", "1.0", "T", "", "-5"])
+        ui.handle_add()
+        assert "reorder point" in joined(outputs).lower()
+        assert "B3" not in service.inventory
+
+
+class TestDef03CorruptRowDoesNotKillTheApp:
+    """#22 — ข้อมูลเสียแถวเดียวต้องไม่ทำให้ทั้งระบบใช้ไม่ได้"""
+
+    def test_skips_corrupt_row_and_keeps_the_rest(self, repo, capsys):
+        repo.path.write_text(json.dumps({
+            "GOOD": {"n": "Fine", "q": 5, "p": 2.0, "c": "T"},
+            "BAD": {"n": "Broken", "q": "abc", "p": 10.0, "c": "Food"},
+        }))
+        inv = repo.load()
+        assert set(inv) == {"GOOD"}
+        assert inv["GOOD"].qty == 5
+
+    def test_warns_which_row_was_skipped(self, repo, capsys):
+        repo.path.write_text(json.dumps({"BAD": {"n": "Broken", "q": "abc", "p": 1.0, "c": "T"}}))
+        repo.load()
+        out = capsys.readouterr().out
+        assert "BAD" in out
+        assert "skip" in out.lower()
+
+    def test_corrupt_price_is_also_skipped(self, repo):
+        repo.path.write_text(json.dumps({"BAD": {"n": "Broken", "q": 1, "p": "free", "c": "T"}}))
+        assert repo.load() == {}
+
+    def test_service_starts_normally_with_a_corrupt_row(self, repo):
+        """ผู้ใช้ต้องเข้าเมนูได้ตามปกติ ไม่ใช่โปรแกรมตายตั้งแต่เปิด"""
+        repo.path.write_text(json.dumps({
+            "GOOD": {"n": "Fine", "q": 5, "p": 2.0, "c": "T"},
+            "BAD": {"n": "Broken", "q": "abc", "p": 1.0, "c": "T"},
+        }))
+        service = InventoryService(repo)
+        assert service.get_summary()[0] == 1
