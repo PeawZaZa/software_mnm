@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from app_v2 import InventoryRepository, Product
+from app_v2 import InventoryRepository, InventoryService, Product
 
 
 # ══════════════════════════════════════════════════
@@ -182,3 +182,151 @@ class TestRepositorySave:
         """[INV-11] เขียนผ่าน .tmp แล้ว replace — ห้ามเหลือไฟล์ .tmp ค้าง"""
         repo.save({"101": Product("101", "Mama Noodles", 50, 6.0, "Food")})
         assert list(tmp_path.glob("*.tmp")) == []
+
+
+# ══════════════════════════════════════════════════
+# SAM1-35: InventoryService — business logic
+# ══════════════════════════════════════════════════
+
+@pytest.fixture
+def service(repo):
+    """Service ที่เริ่มจาก default inventory 3 รายการ (101/102/103)"""
+    return InventoryService(repo)
+
+
+class TestServiceValidate:
+
+    def test_accepts_valid_values(self, service):
+        assert service.validate(10, 5.0) == (True, "")
+
+    def test_accepts_zero(self, service):
+        """qty=0 (ของหมด) และ price=0 (ของแถม) เป็นค่าที่ถูกต้อง"""
+        assert service.validate(0, 0.0)[0] is True
+
+    def test_rejects_negative_qty(self, service):
+        ok, msg = service.validate(-1, 5.0)
+        assert ok is False
+        assert "qty" in msg.lower()
+
+    def test_rejects_negative_price(self, service):
+        ok, msg = service.validate(1, -5.0)
+        assert ok is False
+        assert "price" in msg.lower()
+
+
+class TestServiceAddUpdate:
+
+    def test_adds_new_product(self, service):
+        ok, _ = service.add_update("NEW", "New Product", 30, 15.0, "Test")
+        assert ok is True
+        assert service.inventory["NEW"] == Product("NEW", "New Product", 30, 15.0, "Test")
+
+    def test_update_overwrites_all_fields(self, service):
+        """[INV-8] อัปเดตคือเขียนทับเสมอ ไม่ใช่บวกสะสม"""
+        service.add_update("101", "Renamed Noodle", 99, 9.9, "NewCat")
+        assert service.inventory["101"] == Product("101", "Renamed Noodle", 99, 9.9, "NewCat")
+
+    def test_preserves_other_items(self, service):
+        service.add_update("NEW", "Extra", 5, 5.0, "T")
+        assert {"101", "102", "103"} <= set(service.inventory)
+
+    def test_persists_to_file(self, service, repo):
+        """เพิ่มสินค้าแล้วต้องบันทึกลงไฟล์ทันที"""
+        service.add_update("NEW", "Extra", 5, 5.0, "T")
+        assert "NEW" in repo.load()
+
+    def test_rejects_invalid_and_does_not_persist(self, service, repo):
+        ok, msg = service.add_update("BAD", "Bad", -1, 5.0, "T")
+        assert ok is False
+        assert "BAD" not in service.inventory
+        assert "BAD" not in repo.load()
+
+
+class TestServiceStockOut:
+
+    def test_normal_cut_reduces_qty(self, service):
+        ok, msg = service.stock_out("101", 10)
+        assert ok is True
+        assert "Stock updated" in msg
+        assert service.inventory["101"].qty == 40
+
+    def test_cut_exact_amount_results_in_zero(self, service):
+        ok, _ = service.stock_out("101", 50)
+        assert ok is True
+        assert service.inventory["101"].qty == 0
+
+    def test_cut_more_than_available_fails(self, service):
+        ok, msg = service.stock_out("101", 999)
+        assert ok is False
+        assert "Not enough stock" in msg
+        assert service.inventory["101"].qty == 50
+
+    def test_nonexistent_product_fails(self, service):
+        ok, msg = service.stock_out("999", 1)
+        assert ok is False
+        assert "not found" in msg.lower()
+
+    def test_INV7_negative_amount_rejected(self, service):
+        """[INV-7] จำนวนติดลบต้องไม่ผ่าน และสต๊อกต้องไม่เปลี่ยน"""
+        ok, _ = service.stock_out("101", -5)
+        assert ok is False
+        assert service.inventory["101"].qty == 50
+
+    def test_INV7_zero_amount_rejected(self, service):
+        ok, _ = service.stock_out("101", 0)
+        assert ok is False
+        assert service.inventory["101"].qty == 50
+
+    def test_warns_when_below_low_stock(self, service):
+        """[INV-9] เหลือน้อยกว่า LOW_STOCK (10) ต้องเตือน"""
+        ok, msg = service.stock_out("102", 12)  # 20 → 8
+        assert ok is True
+        assert "WARNING" in msg
+
+    def test_no_warning_when_exactly_low_stock(self, service):
+        """qty = 10 พอดี ยังไม่เตือน (เงื่อนไขคือ < ไม่ใช่ <=)"""
+        ok, msg = service.stock_out("102", 10)  # 20 → 10
+        assert ok is True
+        assert "WARNING" not in msg
+
+    def test_persists_to_file(self, service, repo):
+        service.stock_out("101", 10)
+        assert repo.load()["101"].qty == 40
+
+    def test_failed_cut_does_not_persist(self, service, repo):
+        service.stock_out("101", 999)
+        assert repo.load()["101"].qty == 50
+
+
+class TestServiceGetSummary:
+
+    def test_default_inventory_totals(self, service):
+        """101: 50×6 + 102: 20×12 + 103: 100×10 = 1,540 THB"""
+        total_items, total_val, low = service.get_summary()
+        assert total_items == 3
+        assert total_val == pytest.approx(1540.0)
+        assert low == []
+
+    def test_empty_inventory(self, repo):
+        repo.path.write_text("{}")
+        total_items, total_val, low = InventoryService(repo).get_summary()
+        assert (total_items, total_val, low) == (0, 0.0, [])
+
+    def test_lists_low_stock_names(self, service):
+        service.add_update("A", "BelowTen", 9, 1.0, "T")
+        service.add_update("B", "AtTen", 10, 1.0, "T")
+        _, _, low = service.get_summary()
+        assert "BelowTen" in low
+        assert "AtTen" not in low
+
+    def test_zero_qty_counts_as_low_stock(self, service):
+        service.add_update("A", "Gone", 0, 10.0, "T")
+        assert "Gone" in service.get_summary()[2]
+
+    def test_float_precision(self, repo):
+        repo.path.write_text(json.dumps({"X": {"n": "Precise", "q": 3, "p": 33.33, "c": "T"}}))
+        assert InventoryService(repo).get_summary()[1] == pytest.approx(99.99)
+
+    def test_low_stock_threshold_is_ten(self):
+        """ล็อกค่าเกณฑ์ให้ตรงกับ LOW_STOCK เดิม"""
+        assert InventoryService.LOW_STOCK == 10

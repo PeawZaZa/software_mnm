@@ -5,7 +5,6 @@ from pathlib import Path
 
 # global variables
 db = "data.json"
-LOW_STOCK = 10 # แก้ไข: เพิ่มตัวแปรคงที่สำหรับกำหนดเกณฑ์สต๊อกต่ำ (ใช้ร่วมกันทั้งเมนู 3 และเมนู 4 เพื่อแก้ INV-9)
 
 
 @dataclass
@@ -75,9 +74,62 @@ class InventoryRepository:
             print(f"Error saving data: {e}")
 
 
+class InventoryService:
+    """[SAM1-34] business logic ทั้งหมด — ไม่ยุ่งกับ input/print และไม่ยุ่งกับไฟล์โดยตรง"""
+
+    LOW_STOCK = 10 # [INV-9] เกณฑ์เดียวใช้ร่วมกันทั้งเมนู 3 และเมนู 4
+
+    def __init__(self, repository):
+        self.repository = repository
+        self.inventory = repository.load()
+
+    def validate(self, qty, price):
+        """ตรวจค่าก่อนบันทึก คืน (ok, error_message)"""
+        if qty < 0:
+            return False, "Invalid input: Qty must not be negative."
+        if price < 0:
+            return False, "Invalid input: Price must not be negative."
+        return True, ""
+
+    def add_update(self, product_id, name, qty, price, category):
+        """[INV-8] เพิ่มหรือแก้ไขสินค้า — เขียนทับเสมอ ไม่บวกสะสม"""
+        ok, message = self.validate(qty, price)
+        if not ok:
+            return False, message
+        self.inventory[product_id] = Product(product_id, name, qty, price, category)
+        self.repository.save(self.inventory)
+        return True, "Done."
+
+    def stock_out(self, product_id, amt):
+        """ตัดสต๊อกออก คืน (success, message)"""
+        product = self.inventory.get(product_id)
+        if product is None:
+            return False, "Product not found!"
+        # [INV-7] ปฏิเสธจำนวนที่เป็นลบหรือศูนย์ ก่อนเทียบกับสต๊อกที่มี
+        if amt <= 0:
+            return False, "Error: Amount must be greater than zero!"
+        if product.qty < amt:
+            return False, "Error: Not enough stock!"
+
+        product.qty -= amt
+        self.repository.save(self.inventory)
+        if product.qty < self.LOW_STOCK:
+            return True, "Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!"
+        return True, "Stock updated."
+
+    def get_summary(self):
+        """คืน (จำนวนชนิดสินค้า, มูลค่ารวม, รายชื่อสินค้าที่สต๊อกต่ำ)"""
+        total_items = len(self.inventory)
+        total_val = sum(p.qty * p.price for p in self.inventory.values())
+        low_stock_list = [p.name for p in self.inventory.values() if p.qty < self.LOW_STOCK]
+        return total_items, float(total_val), low_stock_list
+
+
 # ── Backward-compatible wrappers ──
 # test_app.py (regression suite ของ Sprint 1) ยังเรียก API ระดับโมดูลอยู่
 # จึงคง signature เดิมไว้ แล้ว delegate ให้ InventoryRepository
+
+LOW_STOCK = InventoryService.LOW_STOCK # alias ให้โค้ด/เทสต์เดิมที่อ้าง app_v2.LOW_STOCK
 
 def load(inventory):
     """โหลดข้อมูลเข้า dict รูปแบบเดิม (key ย่อ n/q/p/c)"""
