@@ -19,3 +19,6 @@ data.json.tmp
 # OS
 .DS_Store
 Thumbs.db
+
+# Course handout files (local only)
+การบ้าน/

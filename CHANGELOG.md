@@ -1,6 +1,29 @@
 # Changelog
 
-## [v2.0] — Sprint 1
+## [v2.0] — Sprint 2 (Class-Based Architecture)
+
+### Changed
+- **SAM1-28** เพิ่ม `Product` dataclass (`id`, `name`, `qty`, `price`, `category`) พร้อม `to_dict()` / `from_dict()`
+  — รูปแบบไฟล์ `data.json` ยังเป็น key ย่อ `n/q/p/c` เหมือนเดิม ไม่ต้อง migrate ข้อมูล
+- **SAM1-31** แยก `InventoryRepository` รับผิดชอบอ่าน/เขียนไฟล์อย่างเดียว
+  และรวม default data ที่เคยเขียนซ้ำ 2 ที่ให้เหลือ `DEFAULT_DATA` ที่เดียว
+- **SAM1-34** แยก `InventoryService` เก็บ business logic ทั้งหมด
+  (`validate()`, `add_update()`, `stock_out()`, `get_summary()`)
+- **SAM1-37** แยก `ConsoleUI` รับผิดชอบเมนูและ I/O — `main()` เหลือแค่ประกอบร่าง 3 คลาสเข้าด้วยกัน
+- **SAM1-41** ปรับ `ARCHITECTURE.md` เป็นเวอร์ชัน class-based
+
+### Added
+- **SAM1-34** `validate()` ปฏิเสธ `qty` และ `price` ที่ติดลบตอนเพิ่ม/แก้ไขสินค้า (v1.1 ยังบันทึกได้)
+- **SAM1-29 / 33 / 35 / 39 / 40** `test_app_v2.py` — 67 tests ครอบทั้ง 4 คลาส
+  รวม integration test ที่รันครบตั้งแต่ UI ถึงไฟล์ (รวมทั้งโปรเจกต์ 104 tests)
+
+### Compatibility
+- `load(inventory)` / `save(inventory)` / `LOW_STOCK` ระดับโมดูลยังอยู่ในฐานะ wrapper
+  ทำให้ `test_app.py` (regression suite ของ Sprint 1) ทั้ง 37 tests ยังผ่านโดยไม่ต้องแก้
+
+---
+
+## [v1.1] — Sprint 1
 
 ### Fixed
 - **INV-4** ลบ `global x` ออก — ส่ง `inventory` เป็น parameter แทน
