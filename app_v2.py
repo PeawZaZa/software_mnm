@@ -141,94 +141,82 @@ def save(inventory):
     products = {pid: Product.from_dict(pid, item) for pid, item in inventory.items()}
     InventoryRepository(db).save(products)
 
-def main():
-    inventory = {} # ประกาศตัวแปรรับข้อมูลแทนการใช้ global x
-    load(inventory)
-    
-    while True:
-        print("\n=== INVENTORY SYSTEM v1.0 ===")
-        print("1. Show all")
-        print("2. Add or Update")
-        print("3. Out")
-        print("4. Inventory Summary") # [INV-12] เปลี่ยนชื่อจาก Check Check เป็น Inventory Summary
-        print("5. Exit")
-        choice = input("Select menu: ")
-        
-        if choice == "1":
-            print("-" * 50)
-            for k in inventory:
-                print(f"ID: {k} | Name: {inventory[k]['n']} | Stock: {inventory[k]['q']} | Price: {inventory[k]['p']} THB | Type: {inventory[k]['c']}")
-            print("-" * 50)
-            
-        elif choice == "2":
-            a = input("Enter ID: ")
-            b = input("Enter Name: ")
-            
-            # [INV-6] เพิ่ม try/except ดักผู้ใช้พิมพ์ผิด & [INV-5] ใช้ตัวแปร qty แทน c
-            try:
-                qty = int(input("Enter Qty: ")) 
-                d = float(input("Enter Price: "))
-            except ValueError:
-                print("Invalid input: Qty and Price must be numbers.")
-                continue
-                
-            e = input("Enter Category: ")
-            
-            # This logic updates or creates
-            # แก้ไข: ลบ if/else ที่ทำงานเหมือนกันทิ้ง (INV-8) และเขียนทับ/สร้างใหม่ไปเลย
-            inventory[a] = {"n": b, "q": qty, "p": d, "c": e}
-            save(inventory)
-            print("Done.")
-            
-        elif choice == "3":
-            # Cut stock
-            id_to_cut = input("Enter product ID to cut stock: ")
-            if id_to_cut in inventory:
-                # [INV-6] ดักการรับค่าตัวอักษร
-                try:
-                    amt = int(input("How many items out?: "))
-                except ValueError:
-                    print("Invalid input: Amount must be a number.")
-                    continue
-                
-                # fix(menu3): reject negative and zero amount input [INV-7]
-                if amt <= 0:
-                    print("Error: Amount must be greater than zero!")
-                    continue
-                    
-                if inventory[id_to_cut]['q'] >= amt:
-                    inventory[id_to_cut]['q'] -= amt
-                    save(inventory)
-                    print("Stock updated.")
-                    # Check if running low
-                    if inventory[id_to_cut]['q'] < LOW_STOCK: # แก้ไข: ใช้ค่าคงที่ LOW_STOCK แทนตัวเลข 5 (แก้ INV-9: เกณฑ์ไม่ตรงกันระหว่างเมนู 3 และเมนู 4)
-                        print("!!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!")
-                else:
-                    print("Error: Not enough stock!")
+class ConsoleUI:
+    """[SAM1-37] ชั้นติดต่อผู้ใช้ — รับ input, พิมพ์ผล และ route ไปยัง service เท่านั้น"""
+
+    def __init__(self, service, input_fn=input, print_fn=print):
+        # inject input/print เพื่อให้เขียน unit test ได้โดยไม่ต้อง monkeypatch builtins
+        self.service = service
+        self.input = input_fn
+        self.print = print_fn
+
+    def run(self):
+        while True:
+            self.print("")
+            self.print("=== INVENTORY SYSTEM v2.0 ===")
+            self.print("1. Show all")
+            self.print("2. Add or Update")
+            self.print("3. Out")
+            self.print("4. Inventory Summary") # [INV-12] เปลี่ยนชื่อจาก Check Check
+            self.print("5. Exit")
+            choice = self.input("Select menu: ")
+
+            if choice == "1":
+                self.handle_show()
+            elif choice == "2":
+                self.handle_add()
+            elif choice == "3":
+                self.handle_out()
+            elif choice == "4":
+                self.handle_summary()
+            elif choice == "5":
+                self.print("Bye")
+                break
             else:
-                print("Product not found!")
-                
-        elif choice == "4":
-            # Calculate total value and show some alert
-            total_items = 0
-            total_val = 0.0
-            low_stock_list = []
-            
-            for k in inventory:
-                total_items += 1
-                total_val += inventory[k]['q'] * inventory[k]['p']
-                if inventory[k]['q'] < LOW_STOCK: # แก้ไข: ใช้ค่าคงที่ LOW_STOCK แทนตัวเลข 10
-                    low_stock_list.append(inventory[k]['n'])
-                    
-            print(f"Total product types: {total_items}")
-            print(f"Total inventory value: {total_val} THB")
-            print(f"Alert low stock (<{LOW_STOCK}): {', '.join(low_stock_list)}") # แก้ไข: ดึงค่า LOW_STOCK มาแสดงในข้อความแจ้งเตือน
-            
-        elif choice == "5":
-            print("Bye")
-            break
-        else:
-            print("Invalid choice, try again.")
+                self.print("Invalid choice, try again.")
+
+    def handle_show(self):
+        self.print("-" * 50)
+        for product in self.service.inventory.values():
+            self.print(
+                f"ID: {product.id} | Name: {product.name} | Stock: {product.qty} "
+                f"| Price: {product.price} THB | Type: {product.category}"
+            )
+        self.print("-" * 50)
+
+    def handle_add(self):
+        product_id = self.input("Enter ID: ")
+        name = self.input("Enter Name: ")
+        try: # [INV-6] ดักผู้ใช้พิมพ์ตัวอักษรในช่องตัวเลข
+            qty = int(self.input("Enter Qty: "))
+            price = float(self.input("Enter Price: "))
+        except ValueError:
+            self.print("Invalid input: Qty and Price must be numbers.")
+            return
+        category = self.input("Enter Category: ")
+        _, message = self.service.add_update(product_id, name, qty, price, category)
+        self.print(message)
+
+    def handle_out(self):
+        product_id = self.input("Enter product ID to cut stock: ")
+        try: # [INV-6] ดักการรับค่าตัวอักษร
+            amt = int(self.input("How many items out?: "))
+        except ValueError:
+            self.print("Invalid input: Amount must be a number.")
+            return
+        _, message = self.service.stock_out(product_id, amt)
+        self.print(message)
+
+    def handle_summary(self):
+        total_items, total_val, low_stock_list = self.service.get_summary()
+        self.print(f"Total product types: {total_items}")
+        self.print(f"Total inventory value: {total_val} THB")
+        self.print(f"Alert low stock (<{self.service.LOW_STOCK}): {', '.join(low_stock_list)}")
+
+
+def main():
+    ConsoleUI(InventoryService(InventoryRepository(db))).run()
+
 
 if __name__ == "__main__":
     main()

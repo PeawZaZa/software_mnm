@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from app_v2 import InventoryRepository, InventoryService, Product
+from app_v2 import ConsoleUI, InventoryRepository, InventoryService, Product
 
 
 # ══════════════════════════════════════════════════
@@ -330,3 +330,182 @@ class TestServiceGetSummary:
     def test_low_stock_threshold_is_ten(self):
         """ล็อกค่าเกณฑ์ให้ตรงกับ LOW_STOCK เดิม"""
         assert InventoryService.LOW_STOCK == 10
+
+
+# ══════════════════════════════════════════════════
+# SAM1-39: ConsoleUI — menu routing & input handling
+# ══════════════════════════════════════════════════
+
+@pytest.fixture
+def make_ui(service):
+    """
+    สร้าง ConsoleUI ที่ป้อน input จากลิสต์และเก็บ output ไว้ตรวจ
+    คืน (ui, outputs) โดย outputs เป็นข้อความทุกบรรทัดที่ถูกพิมพ์
+    """
+    def _make(inputs):
+        queue = list(inputs)
+        outputs = []
+        ui = ConsoleUI(
+            service,
+            input_fn=lambda prompt="": queue.pop(0),
+            print_fn=lambda *args: outputs.append(" ".join(str(a) for a in args)),
+        )
+        return ui, outputs
+    return _make
+
+
+def joined(outputs):
+    return "\n".join(outputs)
+
+
+class TestConsoleUIRouting:
+
+    def test_exit_stops_the_loop(self, make_ui):
+        ui, outputs = make_ui(["5"])
+        ui.run()
+        assert "Bye" in joined(outputs)
+
+    def test_invalid_choice_reprompts_then_exits(self, make_ui):
+        ui, outputs = make_ui(["9", "5"])
+        ui.run()
+        assert "Invalid choice" in joined(outputs)
+
+    @pytest.mark.parametrize("choice, handler", [
+        ("1", "handle_show"),
+        ("2", "handle_add"),
+        ("3", "handle_out"),
+        ("4", "handle_summary"),
+    ])
+    def test_each_menu_routes_to_its_handler(self, make_ui, choice, handler):
+        ui, _ = make_ui([choice, "5"])
+        called = []
+        setattr(ui, handler, lambda: called.append(handler))
+        ui.run()
+        assert called == [handler]
+
+
+class TestConsoleUIShow:
+
+    def test_lists_every_product(self, make_ui):
+        ui, outputs = make_ui([])
+        ui.handle_show()
+        text = joined(outputs)
+        for name in ("Mama Noodles", "Lactasoy Milk", "Singha Water"):
+            assert name in text
+
+    def test_shows_id_and_stock(self, make_ui):
+        ui, outputs = make_ui([])
+        ui.handle_show()
+        assert "101" in joined(outputs)
+        assert "50" in joined(outputs)
+
+
+class TestConsoleUIAdd:
+
+    def test_adds_product_from_input(self, make_ui, service):
+        ui, _ = make_ui(["NEW", "New Product", "30", "15.0", "Test"])
+        ui.handle_add()
+        assert service.inventory["NEW"] == Product("NEW", "New Product", 30, 15.0, "Test")
+
+    def test_INV6_non_numeric_qty_is_rejected(self, make_ui, service):
+        """[INV-6] พิมพ์ตัวอักษรในช่อง Qty ต้องไม่ crash และต้องไม่บันทึก"""
+        ui, outputs = make_ui(["BAD", "Bad Item", "abc"])
+        ui.handle_add()
+        assert "must be numbers" in joined(outputs)
+        assert "BAD" not in service.inventory
+
+    def test_INV6_non_numeric_price_is_rejected(self, make_ui, service):
+        ui, outputs = make_ui(["BAD", "Bad Item", "10", "xyz"])
+        ui.handle_add()
+        assert "must be numbers" in joined(outputs)
+        assert "BAD" not in service.inventory
+
+    def test_negative_qty_is_rejected_by_service(self, make_ui, service):
+        ui, outputs = make_ui(["BAD", "Bad Item", "-1", "5.0", "T"])
+        ui.handle_add()
+        assert "must not be negative" in joined(outputs)
+        assert "BAD" not in service.inventory
+
+
+class TestConsoleUIStockOut:
+
+    def test_cuts_stock_from_input(self, make_ui, service):
+        ui, outputs = make_ui(["101", "10"])
+        ui.handle_out()
+        assert service.inventory["101"].qty == 40
+        assert "Stock updated" in joined(outputs)
+
+    def test_INV6_non_numeric_amount_is_rejected(self, make_ui, service):
+        ui, outputs = make_ui(["101", "abc"])
+        ui.handle_out()
+        assert "must be a number" in joined(outputs)
+        assert service.inventory["101"].qty == 50
+
+    def test_INV7_negative_amount_is_rejected(self, make_ui, service):
+        ui, outputs = make_ui(["101", "-5"])
+        ui.handle_out()
+        assert "greater than zero" in joined(outputs)
+        assert service.inventory["101"].qty == 50
+
+    def test_unknown_product_reports_not_found(self, make_ui):
+        ui, outputs = make_ui(["999", "1"])
+        ui.handle_out()
+        assert "not found" in joined(outputs).lower()
+
+    def test_low_stock_warning_is_shown(self, make_ui):
+        ui, outputs = make_ui(["102", "12"])  # 20 → 8
+        ui.handle_out()
+        assert "WARNING" in joined(outputs)
+
+
+class TestConsoleUISummary:
+
+    def test_prints_totals(self, make_ui):
+        ui, outputs = make_ui([])
+        ui.handle_summary()
+        text = joined(outputs)
+        assert "3" in text
+        assert "1540" in text.replace(",", "")
+
+    def test_prints_low_stock_alert(self, make_ui, service):
+        service.add_update("A", "Almost Gone", 2, 1.0, "T")
+        ui, outputs = make_ui([])
+        ui.handle_summary()
+        assert "Almost Gone" in joined(outputs)
+
+
+# ══════════════════════════════════════════════════
+# SAM1-40: Integration — ทั้ง 4 คลาสทำงานร่วมกัน
+# ══════════════════════════════════════════════════
+
+class TestIntegration:
+
+    def test_full_flow_persists_across_restart(self, tmp_path):
+        """
+        เพิ่มสินค้า → ตัดสต๊อก → ปิดโปรแกรม → เปิดใหม่แล้วข้อมูลต้องยังอยู่
+        ครอบทั้ง Repository → Service → ConsoleUI
+        """
+        path = str(tmp_path / "data_test.json")
+        inputs = iter([
+            "2", "P01", "Widget", "25", "4.0", "Tools",   # เพิ่มสินค้าใหม่
+            "3", "P01", "20",                              # ตัดออก 20 เหลือ 5
+            "4",                                           # ดูสรุป
+            "5",                                           # ออก
+        ])
+        outputs = []
+        service = InventoryService(InventoryRepository(path))
+        ConsoleUI(
+            service,
+            input_fn=lambda prompt="": next(inputs),
+            print_fn=lambda *args: outputs.append(" ".join(str(a) for a in args)),
+        ).run()
+
+        # เตือนสต๊อกต่ำตอนตัด และโชว์ในสรุป
+        text = joined(outputs)
+        assert "WARNING" in text
+        assert "Widget" in text
+
+        # เปิดโปรแกรมใหม่ด้วย instance ชุดใหม่ ข้อมูลต้องตรง
+        reloaded = InventoryService(InventoryRepository(path))
+        assert reloaded.inventory["P01"] == Product("P01", "Widget", 5, 4.0, "Tools")
+        assert reloaded.get_summary()[0] == 4  # default 3 + Widget
