@@ -1,5 +1,21 @@
 # Changelog
 
+## [v2.1] — CR-01 + CR-02 (Change Requests)
+
+### Added
+- **CR-01** `Product` เพิ่มฟิลด์ `barcode` และ `reorder_point` (มีค่า default จึงอ่าน `data.json` เดิมได้ทันที)
+- **CR-01** `InventoryService.find_by_barcode()` — ค้นสินค้าจากบาร์โค้ด
+- **CR-01** `InventoryService.get_reorder_list()` — รายการสินค้าที่ถึงจุดสั่งซื้อซ้ำ
+  (เกณฑ์รายชิ้น แยกจาก `LOW_STOCK` ที่เป็นเกณฑ์รวมทั้งระบบ)
+- **CR-01** เมนู **6. Reorder List**
+- **CR-02** `CsvReportExporter` — ส่งออกรายงานสต๊อกเป็น CSV
+  (`newline=""` กันบรรทัดว่างบน Windows · `utf-8-sig` ให้ Excel อ่านภาษาไทยได้)
+- **CR-02** เมนู **7. Export CSV**
+
+### Changed
+- รูปแบบ `data.json` เพิ่ม key ย่อ `b` (barcode) และ `r` (reorder point)
+  ไฟล์เก่าที่ไม่มี 2 key นี้ยังอ่านได้ ไม่ต้อง migrate
+
 ## [v2.0] — Sprint 2 (Class-Based Architecture)
 
 ### Changed

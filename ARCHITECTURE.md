@@ -1,5 +1,5 @@
 # System Architecture Document
-## Inventory System v2.0 (Class-Based)
+## Inventory System v2.1 (Class-Based + CR-01/CR-02)
 
 | # | ชื่อ | ตำแหน่ง |
 |---|---|---|
@@ -54,10 +54,12 @@ v2.0 แยกความรับผิดชอบออกเป็น 4 ค
 | `qty` | `int` | จำนวนคงเหลือ |
 | `price` | `float` | ราคาต่อหน่วย (THB) |
 | `category` | `str` | หมวดหมู่ |
+| `barcode` | `str` | **[CR-01]** รหัสบาร์โค้ด — ว่างได้ |
+| `reorder_point` | `int` | **[CR-01]** จุดสั่งซื้อซ้ำ เกณฑ์รายชิ้น |
 
 | เมธอด | Return | หน้าที่ |
 |---|---|---|
-| `to_dict()` | `dict` | แปลงเป็น key ย่อ `n/q/p/c` เพื่อเขียนลงไฟล์ |
+| `to_dict()` | `dict` | แปลงเป็น key ย่อ `n/q/p/c/b/r` เพื่อเขียนลงไฟล์ |
 | `from_dict(product_id, data)` | `Product` | อ่านจาก key ย่อ + แปลงชนิด + เติมค่า default ให้ key ที่ขาด |
 
 ### `InventoryRepository` — persistence [SAM1-31]
@@ -76,16 +78,29 @@ v2.0 แยกความรับผิดชอบออกเป็น 4 ค
 | `add_update(id, name, qty, price, category)` | `(ok, message)` | เขียนทับเสมอ แล้ว `save()` |
 | `stock_out(id, amt)` | `(ok, message)` | ปฏิเสธ `amt <= 0` และปฏิเสธเมื่อสต๊อกไม่พอ |
 | `get_summary()` | `(total_items, total_val, low_stock_list)` | คำนวณมูลค่ารวมและรายชื่อสต๊อกต่ำ |
+| `find_by_barcode(barcode)` | `Product \| None` | **[CR-01]** ค้นจากบาร์โค้ด (ค่าว่างไม่นับว่าตรง) |
+| `get_reorder_list()` | `list[Product]` | **[CR-01]** สินค้าที่ `qty <= reorder_point` |
 
 ค่าคงที่: `InventoryService.LOW_STOCK = 10` — แหล่งความจริงเดียวของเกณฑ์แจ้งเตือน
+
+### `CsvReportExporter` — reporting [CR-02]
+
+| เมธอด | Return | หน้าที่ |
+|---|---|---|
+| `export(inventory, path)` | `int` | เขียน CSV คืนจำนวนแถวข้อมูล |
+
+เขียนด้วย `newline=""` (กัน Windows แทรกบรรทัดว่าง) และ `utf-8-sig` (BOM ให้ Excel อ่านภาษาไทย)
+`csv.writer` ครอบ quote ให้ชื่อสินค้าที่มีลูกน้ำเอง
 
 ### `ConsoleUI` — presentation [SAM1-37]
 
 | เมธอด | หน้าที่ |
 |---|---|
 | `__init__(service, input_fn=input, print_fn=print)` | inject I/O เพื่อให้ unit test ได้โดยไม่ต้อง monkeypatch builtins |
-| `run()` | event loop + routing เมนู 1–5 |
+| `run()` | event loop + routing เมนู 1–7 |
 | `handle_show()` / `handle_add()` / `handle_out()` / `handle_summary()` | หนึ่งเมธอดต่อหนึ่งเมนู |
+| `handle_reorder()` | **[CR-01]** เมนู 6 Reorder List |
+| `handle_export()` | **[CR-02]** เมนู 7 Export CSV — ดัก `OSError` เมื่อเขียนไฟล์ไม่ได้ |
 
 `main()` เหลือหน้าที่เดียวคือประกอบร่าง (composition root):
 
@@ -98,11 +113,12 @@ def main():
 
 ## 3. Data Structure
 
-รูปแบบไฟล์ **ไม่เปลี่ยน** จาก v1.0 — `data.json` เดิมใช้กับ v2.0 ได้ทันที ไม่ต้อง migrate
+`data.json` เดิมใช้ได้ทันที **ไม่ต้อง migrate** — key `b` / `r` ที่ CR-01 เพิ่มเข้ามา
+มีค่า default ใน `from_dict()` แถวเก่าที่ไม่มี 2 key นี้จึงอ่านผ่านตามปกติ
 
 ```json
 {
-  "101": { "n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food" }
+  "101": { "n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food", "b": "8850001", "r": 10 }
 }
 ```
 
@@ -153,16 +169,16 @@ repository.save(inventory)
 
 ## 5. การเปลี่ยนแปลงแต่ละเวอร์ชัน
 
-| จุด | v1.0 | v1.1 (Sprint 1) | v2.0 (Sprint 2) |
-|---|---|---|---|
-| โครงสร้าง | ฟังก์ชัน + `global x` | ฟังก์ชัน + ส่ง dict เป็น parameter | 4 คลาสแยกตามชั้น |
-| ข้อมูลสินค้า | dict `{"n","q","p","c"}` | dict เหมือนเดิม | `Product` dataclass |
-| I/O ไฟล์ | ปนอยู่ใน `load()/save()` | เหมือนเดิม + atomic write | `InventoryRepository` |
-| Business logic | ปนอยู่ใน `main()` | ปนอยู่ใน `main()` | `InventoryService` |
-| หน้าจอ / เมนู | ปนอยู่ใน `main()` | ปนอยู่ใน `main()` | `ConsoleUI` (inject I/O ได้) |
-| Default data | เขียนซ้ำ 2 ที่ | เขียนซ้ำ 2 ที่ | `DEFAULT_DATA` ที่เดียว |
-| ตรวจค่าติดลบตอนเพิ่มสินค้า | ไม่มี | ไม่มี | `validate()` |
-| Unit tests | ไม่มี | 37 tests (`test_app.py`) | +67 tests (`test_app_v2.py`) รวม 104 |
+| จุด | v1.0 | v1.1 (Sprint 1) | v2.0 (Sprint 2) | v2.1 (CR-01/02) |
+|---|---|---|---|---|
+| โครงสร้าง | ฟังก์ชัน + `global x` | ฟังก์ชัน + ส่ง dict เป็น parameter | 4 คลาสแยกตามชั้น | 5 คลาส (+ exporter) |
+| ข้อมูลสินค้า | dict `{"n","q","p","c"}` | dict เหมือนเดิม | `Product` dataclass | + barcode, reorder point |
+| I/O ไฟล์ | ปนอยู่ใน `load()/save()` | เหมือนเดิม + atomic write | `InventoryRepository` | + CSV export |
+| Business logic | ปนอยู่ใน `main()` | ปนอยู่ใน `main()` | `InventoryService` | + reorder / barcode lookup |
+| หน้าจอ / เมนู | ปนอยู่ใน `main()` | ปนอยู่ใน `main()` | `ConsoleUI` (inject I/O ได้) | เมนู 7 รายการ |
+| Default data | เขียนซ้ำ 2 ที่ | เขียนซ้ำ 2 ที่ | `DEFAULT_DATA` ที่เดียว | เหมือนเดิม |
+| ตรวจค่าติดลบตอนเพิ่มสินค้า | ไม่มี | ไม่มี | `validate()` | `validate()` |
+| Unit tests | ไม่มี | 37 tests (`test_app.py`) | +67 tests (`test_app_v2.py`) รวม 104 | รวม 135 |
 
 > `load(inventory)` / `save(inventory)` / `LOW_STOCK` ระดับโมดูลยังคงอยู่ในฐานะ wrapper
 > เพื่อให้ regression suite ของ Sprint 1 (`test_app.py`) ยังรันผ่านโดยไม่ต้องแก้
@@ -176,4 +192,4 @@ repository.save(inventory)
 - ไม่รองรับ concurrent access (ใช้คนเดียวได้)
 - ไม่มี GUI — เป็น CLI เท่านั้น
 - แถวใน `data.json` ที่มีค่าแปลงเป็นตัวเลขไม่ได้ (เช่น `"q": "abc"`) จะทำให้ `load()` โยน `ValueError`
-  — ยังไม่มีการดักที่ระดับแถว (รอ Bug Bashing สัปดาห์ที่ 10)
+- barcode ซ้ำกันได้ และ reorder point ติดลบได้ (ดูรายละเอียดใน `docs/Defect_Log.md`)
