@@ -15,6 +15,20 @@
 | 3 | ตรัยรัตน์ วงษ์สิทธิ์ | QA / Tester |
 | 4 | ทวีชัย ทิใจ | Developer |
 
+### 📎 เอกสารประกอบทั้งหมด (กดเพื่อเปิด)
+
+| เอกสาร | เนื้อหาโดยย่อ |
+|---|---|
+| [Defect Log](Defect_Log.md) | ผล Bug Bashing 5 เคส · ข้อบกพร่อง 4 รายการ พร้อม Steps to Reproduce |
+| [CR-02 Impact & Decision Form](CR-02_Impact_and_Decision_Form.md) | วิเคราะห์ผลกระทบ · ทางเลือก 3 แบบ · ประมาณการ 4.5 Man-Hours |
+| [CCB Meeting Minutes](CCB_Meeting_Minutes.md) | บันทึกประชุม 3 วาระ · มติอนุมัติ CR-02 |
+| [Contingency Reserve Log](Contingency_Reserve_Log.md) | การเบิกกันชนโครงการ 7.0 จาก 12.0 ชม. |
+| [EVM Analysis](EVM_Analysis.md) | SV · CV · SPI · CPI · EAC · VAC ของ Sprint 1 |
+| [Sprint 1 Retrospective](Sprint1_Retrospective.md) | Mad / Sad / Glad + Action Items 7 ข้อ |
+| [Jira Setup Guide](JIRA_SETUP.md) | ขั้นตอนตั้งค่า Sprint บน Jira |
+| [Architecture Document](../ARCHITECTURE.md) | โครงสร้าง 5 คลาส · Data Flow · ตารางเทียบเวอร์ชัน |
+| [Changelog](../CHANGELOG.md) | ประวัติ v1.0 → v1.1 → v2.0 → v2.1 |
+
 ---
 
 ## 1. สรุปผลงานในหน้าเดียว
@@ -87,6 +101,8 @@ def main():
     ConsoleUI(InventoryService(InventoryRepository(db))).run()
 ```
 
+> 📄 รายละเอียดโครงสร้างคลาสทั้งหมดและ Data Flow ดูใน [`ARCHITECTURE.md`](../ARCHITECTURE.md)
+
 **จุดที่อยากให้อาจารย์สังเกต** — ระหว่าง refactor ทั้งไฟล์ **regression suite เดิม 37 เคส
 ไม่แดงแม้แต่ครั้งเดียว** ทำได้โดยคง `load()` / `save()` / `LOW_STOCK` ระดับโมดูลไว้เป็น
 thin wrapper ที่ delegate ให้คลาสใหม่ ทำให้มีตาข่ายนิรภัยตลอดการรื้อโค้ด
@@ -130,6 +146,8 @@ class Product:
 
 > ทีมเลือก**บันทึกผลตามจริง** รวมถึงเคสที่ทดสอบแล้วผ่าน (B1) เพื่อให้ Defect Log
 > สะท้อนสิ่งที่เกิดขึ้นจริง ไม่ใช่รายงานเฉพาะสิ่งที่เจอ
+>
+> 📄 รายละเอียดทุกเคสพร้อม Steps to Reproduce ดูใน [`Defect_Log.md`](Defect_Log.md)
 
 ### 3.2 ข้อบกพร่องที่รุนแรงที่สุด — DEF-03
 
@@ -169,9 +187,13 @@ Total product types: 1        ← เปิดโปรแกรมได้ต�
 | [#20](https://github.com/PeawZaZa/software_mnm/issues/20) | barcode ซ้ำได้ | `InventoryService._barcode_owner()` | 5 |
 | [#21](https://github.com/PeawZaZa/software_mnm/issues/21) | reorder point ติดลบ | `InventoryService.validate()` | 4 |
 
+📄 บันทึกการแก้ไขทั้งหมดดูใน [`Defect_Log.md` หัวข้อ Resolution](Defect_Log.md#การแก้ไข-resolution)
+
 ### 3.4 CR-02 — Export รายงานเป็น CSV
 
 ผ่านกระบวนการ Change Control เต็มรูปแบบ: ยื่นคำขอ → ประเมินผลกระทบ → เข้าที่ประชุม CCB → อนุมัติ **4.5 Man-Hours**
+
+📄 [`CR-02_Impact_and_Decision_Form.md`](CR-02_Impact_and_Decision_Form.md) · [`CCB_Meeting_Minutes.md`](CCB_Meeting_Minutes.md) · [`Contingency_Reserve_Log.md`](Contingency_Reserve_Log.md)
 
 **ผลการประเมินผลกระทบ**
 
@@ -272,6 +294,8 @@ test_app_v2.py  111 passed   ← คลาสทั้ง 5 + CR-01 + CR-02 + bu
 | **SPI** | 0.25 | 🔴 ทำได้แค่ 1/4 ของแผน |
 | **CPI** | 0.67 | 🔴 จ่าย 1 บาท ได้งาน 0.67 บาท |
 
+📄 ตารางคำนวณเต็มพร้อมสูตรและข้อสมมติ ดูใน [`EVM_Analysis.md`](EVM_Analysis.md)
+
 **ข้อสังเกตเชิงวิชาการที่ทีมเจอเอง** — พอ Sprint เสร็จครบ **SV กลับเป็น 0 และ SPI กลับเป็น 1.00**
 ทั้งที่ความจริงส่งงานช้าไป 3 สัปดาห์ นี่คือข้อจำกัดที่รู้จักกันของ EVM ที่ตัวชี้วัด
 ด้านกำหนดการจะบอดตอนใกล้จบโครงการ จึงต้องดูควบคู่กับวันส่งมอบจริงและ Burndown Chart เสมอ
@@ -287,17 +311,19 @@ test_app_v2.py  111 passed   ← คลาสทั้ง 5 + CR-01 + CR-02 + bu
 | 😄 เทสต์คุมพฤติกรรมก่อน refactor | `test_app.py` ทำให้รื้อโค้ดทั้งไฟล์ได้โดยไม่พัง |
 | 😄 แยก branch ตาม role | `feature/tl/...`, `feature/dev/...`, `feature/qa/...` ตามงานได้ง่าย |
 
+📄 เนื้อหาเต็มพร้อม Action Items 7 ข้อ ดูใน [`Sprint1_Retrospective.md`](Sprint1_Retrospective.md)
+
 ### 5.3 เอกสารที่จัดทำ 7 ฉบับ (โฟลเดอร์ `docs/`)
 
 | ไฟล์ | เนื้อหา |
 |---|---|
-| `Sprint1_Retrospective.md` | Mad / Sad / Glad + Action Items 7 ข้อ |
-| `EVM_Analysis.md` | SV, CV, SPI, CPI, EAC, VAC + บทวิเคราะห์สาเหตุ |
-| `Defect_Log.md` | ข้อบกพร่อง 4 รายการ พร้อม Steps to Reproduce และผลหลังแก้ |
-| `CR-02_Impact_and_Decision_Form.md` | Technical Impact + ทางเลือก 3 แบบ + ประมาณการ 4.5 Man-Hours |
-| `CCB_Meeting_Minutes.md` | บันทึกประชุม 3 วาระ + มติและผู้รับผิดชอบ |
-| `Contingency_Reserve_Log.md` | เบิกกันชนไป 7.0 จาก 12.0 ชม. (58.3%) + ข้อเสนอแนะ |
-| `JIRA_SETUP.md` | ขั้นตอนตั้งค่า Sprint บน Jira |
+| [`Sprint1_Retrospective.md`](Sprint1_Retrospective.md) | Mad / Sad / Glad + Action Items 7 ข้อ |
+| [`EVM_Analysis.md`](EVM_Analysis.md) | SV, CV, SPI, CPI, EAC, VAC + บทวิเคราะห์สาเหตุ |
+| [`Defect_Log.md`](Defect_Log.md) | ข้อบกพร่อง 4 รายการ พร้อม Steps to Reproduce และผลหลังแก้ |
+| [`CR-02_Impact_and_Decision_Form.md`](CR-02_Impact_and_Decision_Form.md) | Technical Impact + ทางเลือก 3 แบบ + ประมาณการ 4.5 Man-Hours |
+| [`CCB_Meeting_Minutes.md`](CCB_Meeting_Minutes.md) | บันทึกประชุม 3 วาระ + มติและผู้รับผิดชอบ |
+| [`Contingency_Reserve_Log.md`](Contingency_Reserve_Log.md) | เบิกกันชนไป 7.0 จาก 12.0 ชม. (58.3%) + ข้อเสนอแนะ |
+| [`JIRA_SETUP.md`](JIRA_SETUP.md) | ขั้นตอนตั้งค่า Sprint บน Jira |
 
 ---
 
@@ -318,7 +344,7 @@ test_app_v2.py  111 passed   ← คลาสทั้ง 5 + CR-01 + CR-02 + bu
 The job was not started because your account is locked due to a billing issue.
 ```
 
-workflow `PyTest CI` ถูกตั้งค่าไว้ครบและถูกต้อง (`.github/workflows/pytest.yml`)
+workflow `PyTest CI` ถูกตั้งค่าไว้ครบและถูกต้อง ([`.github/workflows/pytest.yml`](../.github/workflows/pytest.yml))
 แต่บัญชี GitHub ถูกล็อกเรื่องการชำระเงิน job จึงไม่เคยถูกรันเลย
 
 **การรับมือของทีม:** รัน `pytest` ในเครื่องก่อน merge **ทุก PR** และบันทึกผลไว้ใน
@@ -375,4 +401,6 @@ python app_v2.py   # เมนู 1–7 ใช้งานได้จริง
 | GitHub Issues (Bug Bashing) | [#20, #21, #22](https://github.com/PeawZaZa/software_mnm/issues?q=is%3Aissue+label%3Abug) |
 | Release tags | `v2.0`, `v2.1` |
 | Jira board | `SAM1` — Sprint 1 (16 ใบ) · Sprint 2 (19 ใบ) |
-| เอกสารบริหารโครงการ | โฟลเดอร์ [`docs/`](.) |
+| เอกสารบริหารโครงการ | โฟลเดอร์ [`docs/`](.) — ดูสารบัญลิงก์ครบทุกฉบับที่หัวเอกสารนี้ |
+| ซอร์สโค้ดหลัก | [`app_v2.py`](../app_v2.py) |
+| ชุดทดสอบ | [`test_app.py`](../test_app.py) · [`test_app_v2.py`](../test_app_v2.py) |

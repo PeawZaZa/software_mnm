@@ -9,6 +9,8 @@
 เมนูทั้งหมด: 1 Show all · 2 Add/Update · 3 Out · 4 Inventory Summary · 5 Exit
 · **6 Reorder List** (CR-01) · **7 Export CSV** (CR-02)
 
+> 📊 **[รายงานนำเสนอผลงานสัปดาห์ที่ 9–10](docs/Weekly_Presentation_W9-W10.md)** — สรุปงานทั้งหมดพร้อมลิงก์ไปเอกสารประกอบทุกฉบับ
+
 ## วิธีรัน
 
 ```bash
