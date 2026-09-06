@@ -36,7 +36,7 @@ pytest -v
 ├── test_app_v2.py     # Unit Tests — คลาสทั้ง 4 + integration
 ├── ARCHITECTURE.md    # เอกสารสถาปัตยกรรมระบบ
 ├── CHANGELOG.md       # ประวัติการเปลี่ยนแปลง
-├── docs/              # เอกสารบริหารโครงการ (ENGSE202)
+├── docs/              # เอกสารบริหารโครงการ (ENGSE202) + รายงานนำเสนอสัปดาห์ที่ 9–10
 ├── .gitignore
 └── README.md
 ```
