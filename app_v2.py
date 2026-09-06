@@ -1,9 +1,40 @@
 import json
 import os
+from dataclasses import dataclass
 
 # global variables
 db = "data.json"
 LOW_STOCK = 10 # แก้ไข: เพิ่มตัวแปรคงที่สำหรับกำหนดเกณฑ์สต๊อกต่ำ (ใช้ร่วมกันทั้งเมนู 3 และเมนู 4 เพื่อแก้ INV-9)
+
+
+@dataclass
+class Product:
+    """[SAM1-28] สินค้า 1 รายการ — แทนที่ dict {"n","q","p","c"} แบบเดิม"""
+
+    id: str
+    name: str
+    qty: int
+    price: float
+    category: str
+
+    def to_dict(self):
+        """คืนรูปแบบ key ย่อเดิม เพื่อให้ data.json ที่มีอยู่ยังใช้ได้ ไม่ต้อง migrate"""
+        return {"n": self.name, "q": self.qty, "p": self.price, "c": self.category}
+
+    @classmethod
+    def from_dict(cls, product_id, data):
+        """
+        สร้าง Product จาก dict รูปแบบเดิม
+        key ที่ขาดใช้ค่า default (กัน KeyError จาก legacy data ที่ไม่ครบ)
+        แต่ค่าที่แปลงชนิดไม่ได้จะปล่อย ValueError ให้ชั้นบนจัดการ
+        """
+        return cls(
+            id=str(product_id),
+            name=str(data.get("n", "")),
+            qty=int(data.get("q", 0)),
+            price=float(data.get("p", 0.0)),
+            category=str(data.get("c", "")),
+        )
 
 def load(inventory):
     """โหลดข้อมูลจากไฟล์ JSON หากไฟล์เสียหรือไม่มีจะโหลดค่าเริ่มต้น"""
