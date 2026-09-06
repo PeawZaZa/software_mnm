@@ -28,9 +28,7 @@
 
 ---
 
-## ขั้นที่ 2 — สร้าง Sprint ที่ 2 ⬜ **ยังเหลือ**
-
-ตอนนี้มีแค่ `SAM1 Sprint 1` — ต้องสร้างอันที่สองเอง
+## ขั้นที่ 2 — สร้าง Sprint ที่ 2 ✅ **ทำแล้ว**
 
 1. เมนูซ้าย → **Backlog**
 2. กด **+ Add sprint**
@@ -38,19 +36,21 @@
    - `Sprint 1 — Refactor & Bug Fixes`
    - `Sprint 2 — Class-Based Architecture + CR`
 
-> ตรวจแล้วว่า sprint id 2 **ยังไม่มี** (API ตอบ "We could not find the sprint")
-> พอสร้างเสร็จแจ้งได้ เดี๋ยวใส่งานที่เหลือ 19 ใบให้ครบ
+> ✅ สร้างครบ 2 sprint แล้ว (id 1 และ id 2)
 
 ---
 
-## ขั้นที่ 3 — ใส่งานเข้า Sprint
+## ขั้นที่ 3 — ใส่งานเข้า Sprint ✅ **ทำแล้วครบทุกใบ**
 
 | Sprint | Issues | จำนวน | สถานะ |
 |---|---|---|---|
-| Sprint 1 (id 1) | SAM1-11 … SAM1-26 | 16 ใบ | ✅ **ใส่ครบแล้ว** |
-| Sprint 2 (ยังไม่มี) | SAM1-28 … SAM1-48 | 19 ใบ | ⬜ รอสร้าง sprint ก่อน |
+| Sprint 1 (id 1) | SAM1-11 … SAM1-26 | 16 ใบ | ✅ ใส่ครบ |
+| Sprint 2 (id 2) | SAM1-28 … SAM1-48 | 19 ใบ | ✅ ใส่ครบ |
+| **รวม** | | **35 ใบ** | **ไม่เหลือใบที่ไม่มี sprint** |
 
-งาน 19 ใบที่รออยู่ ได้แก่ SAM1-28…43 (Sprint 2 เดิม) และที่สร้างใหม่รอบนี้:
+ยืนยันด้วย JQL: `project = SAM1 AND sprint is EMPTY` → **0 issues**
+
+งานใน Sprint 2 ได้แก่ SAM1-28…43 (backlog เดิม) และที่สร้างใหม่รอบนี้:
 
 | Issue | เรื่อง |
 |---|---|
@@ -98,9 +98,8 @@
 ## Checklist สรุป
 
 - [x] เปิดฟีเจอร์ Sprints ใน Project settings → Features
-- [x] ใส่งาน 16 ใบเข้า Sprint 1
-- [ ] กด **+ Add sprint** สร้าง Sprint 2 ใน Backlog
-- [ ] แจ้งให้ใส่งานอีก 19 ใบเข้า Sprint 2
+- [x] สร้าง Sprint ครบ 2 อันใน Backlog
+- [x] ใส่งานครบทั้ง 35 ใบ (Sprint 1 = 16 · Sprint 2 = 19)
 - [ ] Start sprint ทั้งสองอันด้วยวันที่ย้อนหลัง
 - [ ] แคป Active Sprint (สัปดาห์ที่ 9)
 - [ ] แคป Burndown Chart (สัปดาห์ที่ 10)
