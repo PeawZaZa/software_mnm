@@ -17,35 +17,48 @@
 
 ---
 
-## ขั้นที่ 1 — เปิดฟีเจอร์ Sprints ⬜
+## ขั้นที่ 1 — เปิดฟีเจอร์ Sprints ✅ **ทำแล้ว**
 
 1. เปิด project `SAM1`
 2. เมนูซ้ายล่าง → **Project settings**
 3. เลือก **Features**
 4. เปิดสวิตช์ **Sprints** (ระบบจะเปิด **Backlog** ให้อัตโนมัติด้วย)
 
-> เปิดเสร็จ Jira จะสร้าง `SAM1 Sprint 1` ให้เองใน Backlog
+> ✅ ยืนยันแล้วว่า Sprint field (`customfield_10020`) โผล่ในระบบ และ Jira สร้าง `SAM1 Sprint 1` (id 1) ให้แล้ว
 
 ---
 
-## ขั้นที่ 2 — สร้าง Sprint ให้ครบ 2 อัน ⬜
+## ขั้นที่ 2 — สร้าง Sprint ที่ 2 ⬜ **ยังเหลือ**
+
+ตอนนี้มีแค่ `SAM1 Sprint 1` — ต้องสร้างอันที่สองเอง
 
 1. เมนูซ้าย → **Backlog**
-2. กด **+ Add sprint** เพื่อสร้างอันที่สอง
+2. กด **+ Add sprint**
 3. เปลี่ยนชื่อให้อ่านง่าย (กดที่ชื่อ sprint แล้วพิมพ์ทับ)
    - `Sprint 1 — Refactor & Bug Fixes`
    - `Sprint 2 — Class-Based Architecture + CR`
 
+> ตรวจแล้วว่า sprint id 2 **ยังไม่มี** (API ตอบ "We could not find the sprint")
+> พอสร้างเสร็จแจ้งได้ เดี๋ยวใส่งานที่เหลือ 19 ใบให้ครบ
+
 ---
 
-## ขั้นที่ 3 — ใส่งานเข้า Sprint ✅ (ทำอัตโนมัติให้แล้ว)
+## ขั้นที่ 3 — ใส่งานเข้า Sprint
 
-หลังคุณทำขั้นที่ 1–2 เสร็จและแจ้ง จะมีการใส่งานให้ผ่าน API ตามนี้
+| Sprint | Issues | จำนวน | สถานะ |
+|---|---|---|---|
+| Sprint 1 (id 1) | SAM1-11 … SAM1-26 | 16 ใบ | ✅ **ใส่ครบแล้ว** |
+| Sprint 2 (ยังไม่มี) | SAM1-28 … SAM1-48 | 19 ใบ | ⬜ รอสร้าง sprint ก่อน |
 
-| Sprint | Issues | จำนวน |
-|---|---|---|
-| Sprint 1 | SAM1-11 … SAM1-26 | 16 ใบ |
-| Sprint 2 | SAM1-28 … SAM1-43 + issue CR-01 / CR-02 / DEF | 14 ใบ + ที่สร้างใหม่ |
+งาน 19 ใบที่รออยู่ ได้แก่ SAM1-28…43 (Sprint 2 เดิม) และที่สร้างใหม่รอบนี้:
+
+| Issue | เรื่อง |
+|---|---|
+| SAM1-44 | CR-01 Barcode + Reorder Point |
+| SAM1-45 | CR-02 Export CSV |
+| SAM1-46 | DEF-03 ข้อมูลเสียแถวเดียวทำให้เปิดโปรแกรมไม่ได้ (High) |
+| SAM1-47 | DEF-01 Barcode ซ้ำ |
+| SAM1-48 | DEF-02 Reorder point ติดลบ |
 
 ---
 
@@ -84,9 +97,10 @@
 
 ## Checklist สรุป
 
-- [ ] เปิดฟีเจอร์ Sprints ใน Project settings → Features
-- [ ] สร้าง Sprint ให้ครบ 2 อันใน Backlog
-- [ ] แจ้งให้ใส่งานเข้า sprint ผ่าน API
+- [x] เปิดฟีเจอร์ Sprints ใน Project settings → Features
+- [x] ใส่งาน 16 ใบเข้า Sprint 1
+- [ ] กด **+ Add sprint** สร้าง Sprint 2 ใน Backlog
+- [ ] แจ้งให้ใส่งานอีก 19 ใบเข้า Sprint 2
 - [ ] Start sprint ทั้งสองอันด้วยวันที่ย้อนหลัง
 - [ ] แคป Active Sprint (สัปดาห์ที่ 9)
 - [ ] แคป Burndown Chart (สัปดาห์ที่ 10)
