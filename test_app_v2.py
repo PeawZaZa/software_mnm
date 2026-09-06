@@ -61,7 +61,8 @@ class TestProductToDict:
         เพื่อให้ data.json เดิมยังใช้ได้ ไม่ต้อง migrate ข้อมูล
         """
         d = noodles.to_dict()
-        assert d == {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"}
+        assert d == {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food",
+                     "b": "", "r": 0} # b/r เพิ่มโดย CR-01
 
     def test_to_dict_excludes_id(self, noodles):
         """id เป็น key ของ dict ชั้นนอก จึงต้องไม่ซ้ำอยู่ข้างใน"""
@@ -162,7 +163,8 @@ class TestRepositorySave:
         """ไฟล์ที่เขียนออกต้องยังเป็นรูปแบบ n/q/p/c เดิม"""
         repo.save({"101": Product("101", "Mama Noodles", 50, 6.0, "Food")})
         assert json.loads(repo.path.read_text()) == {
-            "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"}
+            "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food",
+                    "b": "", "r": 0} # b/r เพิ่มโดย CR-01
         }
 
     def test_roundtrip_preserves_data(self, repo):
@@ -403,7 +405,7 @@ class TestConsoleUIShow:
 class TestConsoleUIAdd:
 
     def test_adds_product_from_input(self, make_ui, service):
-        ui, _ = make_ui(["NEW", "New Product", "30", "15.0", "Test"])
+        ui, _ = make_ui(["NEW", "New Product", "30", "15.0", "Test", "", "0"])
         ui.handle_add()
         assert service.inventory["NEW"] == Product("NEW", "New Product", 30, 15.0, "Test")
 
@@ -421,7 +423,7 @@ class TestConsoleUIAdd:
         assert "BAD" not in service.inventory
 
     def test_negative_qty_is_rejected_by_service(self, make_ui, service):
-        ui, outputs = make_ui(["BAD", "Bad Item", "-1", "5.0", "T"])
+        ui, outputs = make_ui(["BAD", "Bad Item", "-1", "5.0", "T", "", "0"])
         ui.handle_add()
         assert "must not be negative" in joined(outputs)
         assert "BAD" not in service.inventory
@@ -487,7 +489,7 @@ class TestIntegration:
         """
         path = str(tmp_path / "data_test.json")
         inputs = iter([
-            "2", "P01", "Widget", "25", "4.0", "Tools",   # เพิ่มสินค้าใหม่
+            "2", "P01", "Widget", "25", "4.0", "Tools", "8850001", "5", # เพิ่มสินค้าใหม่
             "3", "P01", "20",                              # ตัดออก 20 เหลือ 5
             "4",                                           # ดูสรุป
             "5",                                           # ออก
@@ -507,5 +509,125 @@ class TestIntegration:
 
         # เปิดโปรแกรมใหม่ด้วย instance ชุดใหม่ ข้อมูลต้องตรง
         reloaded = InventoryService(InventoryRepository(path))
-        assert reloaded.inventory["P01"] == Product("P01", "Widget", 5, 4.0, "Tools")
+        assert reloaded.inventory["P01"] == Product("P01", "Widget", 5, 4.0, "Tools", "8850001", 5)
         assert reloaded.get_summary()[0] == 4  # default 3 + Widget
+
+
+# ══════════════════════════════════════════════════
+# CR-01: Barcode + Reorder Point
+# ══════════════════════════════════════════════════
+
+class TestProductBarcodeAndReorderPoint:
+
+    def test_defaults_when_not_given(self):
+        """สินค้าเดิมที่ยังไม่ได้กรอก 2 ฟิลด์นี้ ต้องสร้างได้ตามปกติ"""
+        p = Product("X", "Item", 1, 2.0, "T")
+        assert p.barcode == ""
+        assert p.reorder_point == 0
+
+    def test_to_dict_includes_new_keys(self):
+        p = Product("X", "Item", 1, 2.0, "T", barcode="8850001", reorder_point=5)
+        assert p.to_dict() == {
+            "n": "Item", "q": 1, "p": 2.0, "c": "T", "b": "8850001", "r": 5
+        }
+
+    def test_from_dict_reads_new_keys(self):
+        p = Product.from_dict("X", {"n": "Item", "q": 1, "p": 2.0, "c": "T", "b": "8850001", "r": 5})
+        assert p.barcode == "8850001"
+        assert p.reorder_point == 5
+
+    def test_from_dict_defaults_for_legacy_rows(self):
+        """data.json เดิมไม่มี key b/r — ต้องอ่านผ่านโดยไม่ต้อง migrate"""
+        p = Product.from_dict("101", {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"})
+        assert p.barcode == ""
+        assert p.reorder_point == 0
+
+    def test_from_dict_coerces_reorder_point_to_int(self):
+        p = Product.from_dict("X", {"n": "Item", "q": 1, "p": 2.0, "c": "T", "r": "8"})
+        assert p.reorder_point == 8
+        assert isinstance(p.reorder_point, int)
+
+    def test_roundtrip_preserves_new_fields(self):
+        p = Product("X", "Item", 1, 2.0, "T", barcode="8850001", reorder_point=5)
+        assert Product.from_dict(p.id, p.to_dict()) == p
+
+
+class TestServiceFindByBarcode:
+
+    def test_finds_product_by_barcode(self, service):
+        service.add_update("P01", "Widget", 10, 4.0, "Tools", barcode="8850001", reorder_point=3)
+        assert service.find_by_barcode("8850001").id == "P01"
+
+    def test_returns_none_when_barcode_unknown(self, service):
+        assert service.find_by_barcode("0000000") is None
+
+    def test_empty_barcode_never_matches(self, service):
+        """สินค้า default ยังไม่มี barcode — ค้นด้วยค่าว่างต้องไม่ไปเจอมั่ว"""
+        assert service.find_by_barcode("") is None
+
+
+class TestServiceReorderList:
+
+    def test_includes_product_at_or_below_reorder_point(self, service):
+        service.add_update("A", "AtPoint", 5, 1.0, "T", reorder_point=5)
+        service.add_update("B", "BelowPoint", 2, 1.0, "T", reorder_point=5)
+        names = [p.name for p in service.get_reorder_list()]
+        assert "AtPoint" in names
+        assert "BelowPoint" in names
+
+    def test_excludes_product_above_reorder_point(self, service):
+        service.add_update("C", "Plenty", 50, 1.0, "T", reorder_point=5)
+        assert "Plenty" not in [p.name for p in service.get_reorder_list()]
+
+    def test_is_independent_of_low_stock_constant(self, service):
+        """
+        reorder point เป็นเกณฑ์ต่อชิ้น ต่างจาก LOW_STOCK ที่เป็นเกณฑ์รวม
+        qty=8 < LOW_STOCK(10) แต่ยังมากกว่า reorder_point(3) จึงยังไม่ต้องสั่งซื้อ
+        """
+        service.add_update("D", "StillFine", 8, 1.0, "T", reorder_point=3)
+        assert "StillFine" not in [p.name for p in service.get_reorder_list()]
+        assert "StillFine" in service.get_summary()[2]  # แต่ยังขึ้นเตือน low stock
+
+    def test_default_products_with_zero_reorder_point(self, service):
+        """สินค้า default มี reorder_point=0 และ qty>0 จึงต้องไม่ติดรายการสั่งซื้อ"""
+        assert service.get_reorder_list() == []
+
+
+class TestConsoleUIAddWithNewFields:
+
+    def test_adds_product_with_barcode_and_reorder_point(self, make_ui, service):
+        ui, _ = make_ui(["P01", "Widget", "25", "4.0", "Tools", "8850001", "5"])
+        ui.handle_add()
+        assert service.inventory["P01"] == Product("P01", "Widget", 25, 4.0, "Tools", "8850001", 5)
+
+    def test_blank_barcode_is_allowed(self, make_ui, service):
+        ui, _ = make_ui(["P02", "NoBarcode", "1", "1.0", "T", "", "0"])
+        ui.handle_add()
+        assert service.inventory["P02"].barcode == ""
+
+    def test_non_numeric_reorder_point_is_rejected(self, make_ui, service):
+        ui, outputs = make_ui(["P03", "Bad", "1", "1.0", "T", "8850002", "abc"])
+        ui.handle_add()
+        assert "must be a number" in joined(outputs)
+        assert "P03" not in service.inventory
+
+
+class TestConsoleUIReorderList:
+
+    def test_menu_6_routes_to_handler(self, make_ui):
+        ui, _ = make_ui(["6", "5"])
+        called = []
+        ui.handle_reorder = lambda: called.append("handle_reorder")
+        ui.run()
+        assert called == ["handle_reorder"]
+
+    def test_lists_products_needing_reorder(self, make_ui, service):
+        service.add_update("A", "RunningOut", 2, 1.0, "T", reorder_point=5)
+        ui, outputs = make_ui([])
+        ui.handle_reorder()
+        assert "RunningOut" in joined(outputs)
+
+    def test_reports_when_nothing_needs_reorder(self, make_ui):
+        ui, outputs = make_ui([])
+        ui.handle_reorder()
+        assert "No product" in joined(outputs)
