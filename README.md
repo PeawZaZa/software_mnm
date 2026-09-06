@@ -1,8 +1,8 @@
-# Inventory System v2.1
+# Inventory System v2.0
 
 ระบบจัดการคลังสินค้าเบื้องต้น — พัฒนาต่อยอดจาก v1.0 โดยทีม ENGSE225
 
-ตั้งแต่ v2.1 โค้ดถูกแยกเป็น 4 คลาสตามชั้นความรับผิดชอบ
+ตั้งแต่ v2.0 โค้ดถูกแยกเป็น 4 คลาสตามชั้นความรับผิดชอบ
 (`Product` → `InventoryRepository` → `InventoryService` → `ConsoleUI`)
 รายละเอียดอยู่ใน [ARCHITECTURE.md](ARCHITECTURE.md)
 
@@ -28,7 +28,7 @@ pytest -v
 
 ```
 ├── app_v1.py          # โค้ดต้นฉบับ (อาจารย์ให้มา) — เก็บไว้อ้างอิง ไม่ได้ใช้งานแล้ว
-├── app_v2.py          # โค้ดหลัก (class-based ตั้งแต่ v2.1)
+├── app_v2.py          # โค้ดหลัก (class-based ตั้งแต่ v2.0)
 ├── test_app.py        # Unit Tests — regression suite ของ Sprint 1
 ├── test_app_v2.py     # Unit Tests — คลาสทั้ง 4 + integration
 ├── ARCHITECTURE.md    # เอกสารสถาปัตยกรรมระบบ

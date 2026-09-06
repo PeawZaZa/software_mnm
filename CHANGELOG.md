@@ -1,6 +1,6 @@
 # Changelog
 
-## [v2.1] — Sprint 2 (Class-Based Architecture)
+## [v2.0] — Sprint 2 (Class-Based Architecture)
 
 ### Changed
 - **SAM1-28** เพิ่ม `Product` dataclass (`id`, `name`, `qty`, `price`, `category`) พร้อม `to_dict()` / `from_dict()`
@@ -13,7 +13,7 @@
 - **SAM1-41** ปรับ `ARCHITECTURE.md` เป็นเวอร์ชัน class-based
 
 ### Added
-- **SAM1-34** `validate()` ปฏิเสธ `qty` และ `price` ที่ติดลบตอนเพิ่ม/แก้ไขสินค้า (v2.0 ยังบันทึกได้)
+- **SAM1-34** `validate()` ปฏิเสธ `qty` และ `price` ที่ติดลบตอนเพิ่ม/แก้ไขสินค้า (v1.1 ยังบันทึกได้)
 - **SAM1-29 / 33 / 35 / 39 / 40** `test_app_v2.py` — 67 tests ครอบทั้ง 4 คลาส
   รวม integration test ที่รันครบตั้งแต่ UI ถึงไฟล์ (รวมทั้งโปรเจกต์ 104 tests)
 
@@ -23,7 +23,7 @@
 
 ---
 
-## [v2.0] — Sprint 1
+## [v1.1] — Sprint 1
 
 ### Fixed
 - **INV-4** ลบ `global x` ออก — ส่ง `inventory` เป็น parameter แทน

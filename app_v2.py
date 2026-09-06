@@ -137,7 +137,7 @@ class ConsoleUI:
     def run(self):
         while True:
             self.print("")
-            self.print("=== INVENTORY SYSTEM v2.1 ===")
+            self.print("=== INVENTORY SYSTEM v2.0 ===")
             self.print("1. Show all")
             self.print("2. Add or Update")
             self.print("3. Out")
