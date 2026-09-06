@@ -16,10 +16,15 @@ class Product:
     qty: int
     price: float
     category: str
+    barcode: str = ""       # [CR-01] รหัสบาร์โค้ด — ว่างได้ สินค้าเดิมยังไม่มี
+    reorder_point: int = 0  # [CR-01] จุดสั่งซื้อซ้ำ เกณฑ์รายชิ้น
 
     def to_dict(self):
         """คืนรูปแบบ key ย่อเดิม เพื่อให้ data.json ที่มีอยู่ยังใช้ได้ ไม่ต้อง migrate"""
-        return {"n": self.name, "q": self.qty, "p": self.price, "c": self.category}
+        return {
+            "n": self.name, "q": self.qty, "p": self.price, "c": self.category,
+            "b": self.barcode, "r": self.reorder_point, # [CR-01]
+        }
 
     @classmethod
     def from_dict(cls, product_id, data):
@@ -34,6 +39,9 @@ class Product:
             qty=int(data.get("q", 0)),
             price=float(data.get("p", 0.0)),
             category=str(data.get("c", "")),
+            # [CR-01] key b/r ไม่มีใน data.json เดิม จึงต้องมีค่า default
+            barcode=str(data.get("b", "")),
+            reorder_point=int(data.get("r", 0)),
         )
 
 
@@ -91,12 +99,15 @@ class InventoryService:
             return False, "Invalid input: Price must not be negative."
         return True, ""
 
-    def add_update(self, product_id, name, qty, price, category):
+    def add_update(self, product_id, name, qty, price, category,
+                   barcode="", reorder_point=0):
         """[INV-8] เพิ่มหรือแก้ไขสินค้า — เขียนทับเสมอ ไม่บวกสะสม"""
         ok, message = self.validate(qty, price)
         if not ok:
             return False, message
-        self.inventory[product_id] = Product(product_id, name, qty, price, category)
+        self.inventory[product_id] = Product(
+            product_id, name, qty, price, category, barcode, reorder_point
+        )
         self.repository.save(self.inventory)
         return True, "Done."
 
@@ -116,6 +127,20 @@ class InventoryService:
         if product.qty < self.LOW_STOCK:
             return True, "Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!"
         return True, "Stock updated."
+
+    def find_by_barcode(self, barcode):
+        """[CR-01] ค้นสินค้าจากบาร์โค้ด คืน None ถ้าไม่เจอ (บาร์โค้ดว่างไม่นับว่าตรงกัน)"""
+        if not barcode:
+            return None
+        for product in self.inventory.values():
+            if product.barcode == barcode:
+                return product
+        return None
+
+    def get_reorder_list(self):
+        """[CR-01] สินค้าที่ถึงจุดสั่งซื้อซ้ำแล้ว (qty <= reorder_point ของชิ้นนั้น)"""
+        return [p for p in self.inventory.values()
+                if p.reorder_point > 0 and p.qty <= p.reorder_point]
 
     def get_summary(self):
         """คืน (จำนวนชนิดสินค้า, มูลค่ารวม, รายชื่อสินค้าที่สต๊อกต่ำ)"""
@@ -143,6 +168,7 @@ class ConsoleUI:
             self.print("3. Out")
             self.print("4. Inventory Summary") # [INV-12] เปลี่ยนชื่อจาก Check Check
             self.print("5. Exit")
+            self.print("6. Reorder List") # [CR-01]
             choice = self.input("Select menu: ")
 
             if choice == "1":
@@ -153,6 +179,8 @@ class ConsoleUI:
                 self.handle_out()
             elif choice == "4":
                 self.handle_summary()
+            elif choice == "6":
+                self.handle_reorder()
             elif choice == "5":
                 self.print("Bye")
                 break
@@ -178,7 +206,15 @@ class ConsoleUI:
             self.print("Invalid input: Qty and Price must be numbers.")
             return
         category = self.input("Enter Category: ")
-        _, message = self.service.add_update(product_id, name, qty, price, category)
+        barcode = self.input("Enter Barcode (leave blank if none): ") # [CR-01]
+        try:
+            reorder_point = int(self.input("Enter Reorder Point: "))
+        except ValueError:
+            self.print("Invalid input: Reorder Point must be a number.")
+            return
+        _, message = self.service.add_update(
+            product_id, name, qty, price, category, barcode, reorder_point
+        )
         self.print(message)
 
     def handle_out(self):
@@ -190,6 +226,20 @@ class ConsoleUI:
             return
         _, message = self.service.stock_out(product_id, amt)
         self.print(message)
+
+    def handle_reorder(self):
+        """[CR-01] แสดงรายการสินค้าที่ถึงจุดสั่งซื้อซ้ำ"""
+        reorder_list = self.service.get_reorder_list()
+        if not reorder_list:
+            self.print("No product has reached its reorder point.")
+            return
+        self.print("-" * 50)
+        for product in reorder_list:
+            self.print(
+                f"ID: {product.id} | Name: {product.name} "
+                f"| Stock: {product.qty} | Reorder Point: {product.reorder_point}"
+            )
+        self.print("-" * 50)
 
     def handle_summary(self):
         total_items, total_val, low_stock_list = self.service.get_summary()
