@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 from dataclasses import dataclass
@@ -150,14 +151,35 @@ class InventoryService:
         return total_items, float(total_val), low_stock_list
 
 
+class CsvReportExporter:
+    """[CR-02] ส่งออกรายงานสต๊อกเป็นไฟล์ CSV"""
+
+    HEADERS = ["id", "name", "qty", "price", "category", "barcode", "reorder_point"]
+
+    def export(self, inventory, path):
+        """เขียน inventory ลงไฟล์ CSV คืนจำนวนแถวข้อมูล (ไม่นับ header)"""
+        # newline="" กัน Windows แทรกบรรทัดว่างคั่นทุกแถว
+        # utf-8-sig ใส่ BOM ให้ Excel อ่านภาษาไทยได้ถูกต้อง
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(self.HEADERS)
+            for product in inventory.values():
+                writer.writerow([
+                    product.id, product.name, product.qty, product.price,
+                    product.category, product.barcode, product.reorder_point,
+                ])
+        return len(inventory)
+
+
 class ConsoleUI:
     """[SAM1-37] ชั้นติดต่อผู้ใช้ — รับ input, พิมพ์ผล และ route ไปยัง service เท่านั้น"""
 
-    def __init__(self, service, input_fn=input, print_fn=print):
+    def __init__(self, service, input_fn=input, print_fn=print, exporter=None):
         # inject input/print เพื่อให้เขียน unit test ได้โดยไม่ต้อง monkeypatch builtins
         self.service = service
         self.input = input_fn
         self.print = print_fn
+        self.exporter = exporter if exporter is not None else CsvReportExporter()
 
     def run(self):
         while True:
@@ -169,6 +191,7 @@ class ConsoleUI:
             self.print("4. Inventory Summary") # [INV-12] เปลี่ยนชื่อจาก Check Check
             self.print("5. Exit")
             self.print("6. Reorder List") # [CR-01]
+            self.print("7. Export CSV") # [CR-02]
             choice = self.input("Select menu: ")
 
             if choice == "1":
@@ -181,6 +204,8 @@ class ConsoleUI:
                 self.handle_summary()
             elif choice == "6":
                 self.handle_reorder()
+            elif choice == "7":
+                self.handle_export()
             elif choice == "5":
                 self.print("Bye")
                 break
@@ -240,6 +265,16 @@ class ConsoleUI:
                 f"| Stock: {product.qty} | Reorder Point: {product.reorder_point}"
             )
         self.print("-" * 50)
+
+    def handle_export(self):
+        """[CR-02] ส่งออกรายงานเป็น CSV"""
+        path = self.input("Enter output CSV path: ")
+        try:
+            rows = self.exporter.export(self.service.inventory, path)
+        except OSError as e:
+            self.print(f"Error: cannot write CSV file: {e}")
+            return
+        self.print(f"Exported {rows} products to {path}")
 
     def handle_summary(self):
         total_items, total_val, low_stock_list = self.service.get_summary()

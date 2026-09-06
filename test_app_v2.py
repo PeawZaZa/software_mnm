@@ -6,11 +6,18 @@
 # ต่างจาก test_app.py ตรงที่ไฟล์นี้เรียกคลาส "ของจริง" ใน app_v2.py
 # ไม่ใช่ฟังก์ชันจำลอง (calc_summary / apply_stock_out) แบบไฟล์เดิม
 
+import csv
 import json
 
 import pytest
 
-from app_v2 import ConsoleUI, InventoryRepository, InventoryService, Product
+from app_v2 import (
+    ConsoleUI,
+    CsvReportExporter,
+    InventoryRepository,
+    InventoryService,
+    Product,
+)
 
 
 # ══════════════════════════════════════════════════
@@ -631,3 +638,93 @@ class TestConsoleUIReorderList:
         ui, outputs = make_ui([])
         ui.handle_reorder()
         assert "No product" in joined(outputs)
+
+
+# ══════════════════════════════════════════════════
+# CR-02: CsvReportExporter
+# ══════════════════════════════════════════════════
+
+class TestCsvReportExporter:
+
+    @pytest.fixture
+    def out_path(self, tmp_path):
+        return tmp_path / "report.csv"
+
+    def read_rows(self, path):
+        with open(path, newline="", encoding="utf-8-sig") as f:
+            return list(csv.reader(f))
+
+    def test_writes_header_row(self, service, out_path):
+        CsvReportExporter().export(service.inventory, str(out_path))
+        assert self.read_rows(out_path)[0] == [
+            "id", "name", "qty", "price", "category", "barcode", "reorder_point"
+        ]
+
+    def test_returns_number_of_data_rows(self, service, out_path):
+        assert CsvReportExporter().export(service.inventory, str(out_path)) == 3
+
+    def test_writes_one_row_per_product(self, service, out_path):
+        CsvReportExporter().export(service.inventory, str(out_path))
+        rows = self.read_rows(out_path)
+        assert len(rows) == 4  # header + 3 สินค้า
+        assert rows[1] == ["101", "Mama Noodles", "50", "6.0", "Food", "", "0"]
+
+    def test_includes_new_cr01_fields(self, service, out_path):
+        service.add_update("P01", "Widget", 4, 4.0, "Tools", barcode="8850001", reorder_point=5)
+        CsvReportExporter().export(service.inventory, str(out_path))
+        row = [r for r in self.read_rows(out_path) if r[0] == "P01"][0]
+        assert row[5] == "8850001"
+        assert row[6] == "5"
+
+    def test_empty_inventory_writes_header_only(self, repo, out_path):
+        repo.path.write_text("{}")
+        service = InventoryService(repo)
+        assert CsvReportExporter().export(service.inventory, str(out_path)) == 0
+        assert len(self.read_rows(out_path)) == 1
+
+    def test_name_containing_comma_stays_one_field(self, service, out_path):
+        service.add_update("P02", "Snack, Large", 1, 1.0, "T")
+        CsvReportExporter().export(service.inventory, str(out_path))
+        row = [r for r in self.read_rows(out_path) if r[0] == "P02"][0]
+        assert row[1] == "Snack, Large"
+
+    def test_thai_name_survives_roundtrip(self, service, out_path):
+        """ต้องเขียนเป็น UTF-8 พร้อม BOM เพื่อให้ Excel อ่านภาษาไทยไม่เป็นตัวต่างดาว"""
+        service.add_update("P03", "มาม่าต้มยำ", 1, 1.0, "อาหาร")
+        CsvReportExporter().export(service.inventory, str(out_path))
+        row = [r for r in self.read_rows(out_path) if r[0] == "P03"][0]
+        assert row[1] == "มาม่าต้มยำ"
+        assert out_path.read_bytes().startswith(b"\xef\xbb\xbf")
+
+    def test_no_blank_line_between_rows(self, service, out_path):
+        """เขียนด้วย newline='' ไม่งั้นบน Windows จะได้บรรทัดว่างคั่นทุกแถว"""
+        CsvReportExporter().export(service.inventory, str(out_path))
+        text = out_path.read_text(encoding="utf-8-sig")
+        assert "\r\n\r\n" not in text
+
+    def test_overwrites_existing_file(self, service, out_path):
+        out_path.write_text("ของเก่าที่ต้องถูกเขียนทับ", encoding="utf-8")
+        CsvReportExporter().export(service.inventory, str(out_path))
+        assert "ของเก่า" not in out_path.read_text(encoding="utf-8-sig")
+
+
+class TestConsoleUIExportCsv:
+
+    def test_menu_7_routes_to_handler(self, make_ui):
+        ui, _ = make_ui(["7", "5"])
+        called = []
+        ui.handle_export = lambda: called.append("handle_export")
+        ui.run()
+        assert called == ["handle_export"]
+
+    def test_exports_to_given_path(self, make_ui, tmp_path, service):
+        target = tmp_path / "out.csv"
+        ui, outputs = make_ui([str(target)])
+        ui.handle_export()
+        assert target.exists()
+        assert "3" in joined(outputs)  # รายงานจำนวนแถวที่เขียน
+
+    def test_reports_error_when_path_unwritable(self, make_ui, tmp_path):
+        ui, outputs = make_ui([str(tmp_path / "no-such-dir" / "out.csv")])
+        ui.handle_export()
+        assert "Error" in joined(outputs)
