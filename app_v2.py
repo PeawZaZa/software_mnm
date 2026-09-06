@@ -70,7 +70,14 @@ class InventoryRepository:
                 raw = self.DEFAULT_DATA
         else:
             raw = self.DEFAULT_DATA
-        return {pid: Product.from_dict(pid, item) for pid, item in raw.items()}
+        inventory = {}
+        for pid, item in raw.items():
+            try:
+                inventory[pid] = Product.from_dict(pid, item)
+            except (ValueError, TypeError, AttributeError):
+                # [#22] ข้อมูลเสียแถวเดียวต้องไม่ทำให้เปิดโปรแกรมไม่ได้ทั้งระบบ
+                print(f"Warning: skipping corrupted row '{pid}' in {self.path.name}.")
+        return inventory
 
     def save(self, inventory):
         """[INV-11] ทำ Atomic write ผ่าน tmp file เพื่อป้องกันไฟล์เสียระหว่างเซฟ"""
@@ -92,20 +99,36 @@ class InventoryService:
         self.repository = repository
         self.inventory = repository.load()
 
-    def validate(self, qty, price):
+    def validate(self, qty, price, reorder_point=0):
         """ตรวจค่าก่อนบันทึก คืน (ok, error_message)"""
         if qty < 0:
             return False, "Invalid input: Qty must not be negative."
         if price < 0:
             return False, "Invalid input: Price must not be negative."
+        # [#21] จุดสั่งซื้อซ้ำติดลบไม่มีความหมาย และเคยถูกบันทึกแล้วละเลยเงียบๆ
+        if reorder_point < 0:
+            return False, "Invalid input: Reorder Point must not be negative."
         return True, ""
+
+    def _barcode_owner(self, barcode, exclude_id):
+        """[#20] คืน id ของสินค้าตัวอื่นที่ใช้บาร์โค้ดนี้อยู่ (บาร์โค้ดว่างไม่นับ)"""
+        if not barcode:
+            return None
+        for product_id, product in self.inventory.items():
+            if product.barcode == barcode and product_id != exclude_id:
+                return product_id
+        return None
 
     def add_update(self, product_id, name, qty, price, category,
                    barcode="", reorder_point=0):
         """[INV-8] เพิ่มหรือแก้ไขสินค้า — เขียนทับเสมอ ไม่บวกสะสม"""
-        ok, message = self.validate(qty, price)
+        ok, message = self.validate(qty, price, reorder_point)
         if not ok:
             return False, message
+        # [#20] กันสินค้าคนละตัวใช้บาร์โค้ดเดียวกัน จนค้นหาแล้วเจอผิดตัว
+        owner = self._barcode_owner(barcode, product_id)
+        if owner is not None:
+            return False, f"Error: Barcode {barcode} is already used by product {owner}."
         self.inventory[product_id] = Product(
             product_id, name, qty, price, category, barcode, reorder_point
         )

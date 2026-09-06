@@ -17,13 +17,13 @@
 
 | ID | เคส | ผล | ความรุนแรง | สถานะ |
 |---|---|---|---|---|
-| DEF-01 | Barcode ซ้ำกับสินค้าอื่น | ❌ พบข้อบกพร่อง | Medium | ⬜ รอแก้ |
-| DEF-02 | Reorder Point ติดลบ | ❌ พบข้อบกพร่อง | Medium | ⬜ รอแก้ |
-| DEF-03 | ค่าใน `data.json` แปลงเป็นตัวเลขไม่ได้ | ❌ พบข้อบกพร่อง | **High** | ⬜ รอแก้ |
-| DEF-04 | ลบฟิลด์ใน `data.json` | ⚠️ ทำงานได้แต่ผลเงียบผิด | Low | ⬜ รับทราบ |
+| DEF-01 | Barcode ซ้ำกับสินค้าอื่น | ❌ พบข้อบกพร่อง | Medium | ✅ แก้แล้ว [#20](https://github.com/PeawZaZa/software_mnm/issues/20) |
+| DEF-02 | Reorder Point ติดลบ | ❌ พบข้อบกพร่อง | Medium | ✅ แก้แล้ว [#21](https://github.com/PeawZaZa/software_mnm/issues/21) |
+| DEF-03 | ค่าใน `data.json` แปลงเป็นตัวเลขไม่ได้ | ❌ พบข้อบกพร่อง | **High** | ✅ แก้แล้ว [#22](https://github.com/PeawZaZa/software_mnm/issues/22) |
+| DEF-04 | ลบฟิลด์ใน `data.json` | ⚠️ ทำงานได้แต่ผลเงียบผิด | Low | 📌 รับทราบ ยกไป sprint ถัดไป |
 | — | Reorder Point เป็นตัวอักษร | ✅ ผ่าน ไม่พบข้อบกพร่อง | — | — |
 
-> ช่อง **GitHub Issue** จะเติมหลังเปิด issue จริงบน repo
+> ทุกรายการแก้เสร็จและปิด issue แล้วใน commit เดียวกัน — ชุดทดสอบเพิ่มจาก 135 เป็น **148 tests**
 
 ---
 
@@ -32,7 +32,7 @@
 | | |
 |---|---|
 | ความรุนแรง | **Medium** |
-| GitHub Issue | *(รอเลข)* |
+| GitHub Issue | [#20](https://github.com/PeawZaZa/software_mnm/issues/20) |
 | เคสในใบงาน | Case A |
 | ส่วนที่เกี่ยวข้อง | `InventoryService.add_update()`, `InventoryService.find_by_barcode()` |
 
@@ -60,7 +60,7 @@ find_by_barcode returns: A1
 | | |
 |---|---|
 | ความรุนแรง | **Medium** |
-| GitHub Issue | *(รอเลข)* |
+| GitHub Issue | [#21](https://github.com/PeawZaZa/software_mnm/issues/21) |
 | เคสในใบงาน | Case B (ส่วนค่าติดลบ) |
 | ส่วนที่เกี่ยวข้อง | `InventoryService.validate()`, `InventoryService.get_reorder_list()` |
 
@@ -91,7 +91,7 @@ appears in reorder list: []
 | | |
 |---|---|
 | ความรุนแรง | **High** |
-| GitHub Issue | *(รอเลข)* |
+| GitHub Issue | [#22](https://github.com/PeawZaZa/software_mnm/issues/22) |
 | เคสในใบงาน | Case C (ต่อยอด) |
 | ส่วนที่เกี่ยวข้อง | `Product.from_dict()`, `InventoryRepository.load()` |
 
@@ -153,3 +153,33 @@ ValueError: invalid literal for int() with base 10: 'abc'
 `UnicodeEncodeError: ... surrogates not allowed`
 ตรวจแล้วเป็นเรื่องการถอดรหัส stdin ของ Windows ไม่ใช่บั๊กของโปรแกรม —
 ตั้ง `PYTHONIOENCODING=utf-8` แล้วภาษาไทยทำงานถูกต้องทั้งการบันทึกและการส่งออก CSV
+
+
+---
+
+## การแก้ไข (Resolution)
+
+แก้ทั้ง 3 รายการบน branch `fix/bug-bashing` ตามแนวทาง TDD —
+เขียนเทสต์ให้แดงก่อนทุกข้อ แล้วจึงแก้โค้ดให้เขียว
+
+| ID | Issue | สิ่งที่แก้ | เทสต์ที่เพิ่ม |
+|---|---|---|---|
+| DEF-01 | #20 | `InventoryService._barcode_owner()` ตรวจเจ้าของบาร์โค้ด และ `add_update()` ปฏิเสธเมื่อซ้ำ | 5 |
+| DEF-02 | #21 | `validate()` รับ `reorder_point` เพิ่มและปฏิเสธค่าติดลบ | 4 |
+| DEF-03 | #22 | `InventoryRepository.load()` ดัก `ValueError` รายแถว ข้ามแถวเสียพร้อมแจ้งชื่อแถว | 4 |
+
+**ผลการตรวจสอบซ้ำในโปรแกรมจริง**
+
+```
+#20  Error: Barcode 8850001 is already used by product A1.
+#21  Invalid input: Reorder Point must not be negative.
+#22  Warning: skipping corrupted row 'BAD' in data.json.
+     ID: GOOD | Name: Fine | Stock: 5 | Price: 2.0 THB | Type: T
+     Total product types: 1        ← เปิดโปรแกรมได้ตามปกติ
+```
+
+**Regression** — ชุดทดสอบทั้งโปรเจกต์ 148 tests ผ่านครบ 100%
+รวมถึง regression suite ของ Sprint 1 ทั้ง 37 เคสที่ไม่ต้องแก้เลย
+
+**หมายเหตุการออกแบบ** — DEF-01 ยอมให้สินค้าหลายตัวมีบาร์โค้ดว่างพร้อมกันได้
+และยอมให้สินค้าตัวเดิมแก้ไขโดยใช้บาร์โค้ดของตัวเองซ้ำได้ มีเทสต์คุมทั้งสองกรณี
