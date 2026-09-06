@@ -1,6 +1,7 @@
 import json
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 # global variables
 db = "data.json"
@@ -36,38 +37,57 @@ class Product:
             category=str(data.get("c", "")),
         )
 
+
+class InventoryRepository:
+    """[SAM1-31] รับผิดชอบการอ่าน/เขียน data.json เพียงอย่างเดียว"""
+
+    # ย้าย default data มาไว้ที่เดียว (เดิมเขียนซ้ำ 2 ที่ใน load())
+    DEFAULT_DATA = {
+        "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"},
+        "102": {"n": "Lactasoy Milk", "q": 20, "p": 12.0, "c": "Drink"},
+        "103": {"n": "Singha Water", "q": 100, "p": 10.0, "c": "Drink"}
+    }
+
+    def __init__(self, path=None):
+        # อ่านค่า db ตอนถูกเรียก ไม่ใช่ตอนนิยามคลาส เพื่อให้ monkeypatch ใน test ทำงานได้
+        self.path = Path(path if path is not None else db)
+
+    def load(self):
+        """โหลดข้อมูลเป็น dict[str, Product] หากไฟล์เสียหรือไม่มีจะใช้ค่าเริ่มต้น"""
+        if self.path.exists():
+            try: # [INV-10] เพิ่ม try/except สำหรับอ่านไฟล์
+                raw = json.loads(self.path.read_text(encoding="utf-8"))
+            except Exception: # [INV-10] ถ้าไฟล์เสียหรืออ่านไม่ได้ ให้โหลด default แทน
+                print("Warning: Database file is corrupted. Loading default data.")
+                raw = self.DEFAULT_DATA
+        else:
+            raw = self.DEFAULT_DATA
+        return {pid: Product.from_dict(pid, item) for pid, item in raw.items()}
+
+    def save(self, inventory):
+        """[INV-11] ทำ Atomic write ผ่าน tmp file เพื่อป้องกันไฟล์เสียระหว่างเซฟ"""
+        temp_path = Path(str(self.path) + ".tmp")
+        try:
+            payload = {pid: product.to_dict() for pid, product in inventory.items()}
+            temp_path.write_text(json.dumps(payload), encoding="utf-8")
+            os.replace(temp_path, self.path) # [INV-11] replace ไฟล์ต้นฉบับเมื่อเขียนเสร็จสมบูรณ์
+        except Exception as e:
+            print(f"Error saving data: {e}")
+
+
+# ── Backward-compatible wrappers ──
+# test_app.py (regression suite ของ Sprint 1) ยังเรียก API ระดับโมดูลอยู่
+# จึงคง signature เดิมไว้ แล้ว delegate ให้ InventoryRepository
+
 def load(inventory):
-    """โหลดข้อมูลจากไฟล์ JSON หากไฟล์เสียหรือไม่มีจะโหลดค่าเริ่มต้น"""
-    if os.path.exists(db):
-        try: # [INV-10] เพิ่ม try/except สำหรับอ่านไฟล์
-            with open(db, 'r') as f:
-                inventory.update(json.load(f))
-        except Exception: # [INV-10] ถ้าไฟล์เสียหรืออ่านไม่ได้ ให้โหลด default แทน
-            print("Warning: Database file is corrupted. Loading default data.")
-            default_data = {
-                "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"},
-                "102": {"n": "Lactasoy Milk", "q": 20, "p": 12.0, "c": "Drink"},
-                "103": {"n": "Singha Water", "q": 100, "p": 10.0, "c": "Drink"}
-            }
-            inventory.update(default_data)
-    else:
-        # default data if file not found
-        default_data = {
-            "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"},
-            "102": {"n": "Lactasoy Milk", "q": 20, "p": 12.0, "c": "Drink"},
-            "103": {"n": "Singha Water", "q": 100, "p": 10.0, "c": "Drink"}
-        }
-        inventory.update(default_data)
+    """โหลดข้อมูลเข้า dict รูปแบบเดิม (key ย่อ n/q/p/c)"""
+    loaded = InventoryRepository(db).load()
+    inventory.update({pid: product.to_dict() for pid, product in loaded.items()})
 
 def save(inventory):
-    """[INV-11] ทำ Atomic write ผ่าน tmp file เพื่อป้องกันไฟล์เสียระหว่างเซฟ"""
-    temp_db = db + ".tmp"
-    try:
-        with open(temp_db, 'w') as f:
-            json.dump(inventory, f)
-        os.replace(temp_db, db) # [INV-11] replace ไฟล์ต้นฉบับเมื่อเขียนเสร็จสมบูรณ์
-    except Exception as e:
-        print(f"Error saving data: {e}")
+    """บันทึก dict รูปแบบเดิมลงไฟล์"""
+    products = {pid: Product.from_dict(pid, item) for pid, item in inventory.items()}
+    InventoryRepository(db).save(products)
 
 def main():
     inventory = {} # ประกาศตัวแปรรับข้อมูลแทนการใช้ global x

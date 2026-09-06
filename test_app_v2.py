@@ -6,9 +6,11 @@
 # ต่างจาก test_app.py ตรงที่ไฟล์นี้เรียกคลาส "ของจริง" ใน app_v2.py
 # ไม่ใช่ฟังก์ชันจำลอง (calc_summary / apply_stock_out) แบบไฟล์เดิม
 
+import json
+
 import pytest
 
-from app_v2 import Product
+from app_v2 import InventoryRepository, Product
 
 
 # ══════════════════════════════════════════════════
@@ -100,3 +102,83 @@ class TestProductFromDict:
         """ค่าที่แปลงเป็นตัวเลขไม่ได้เลย ต้องโยน ValueError ให้ชั้นบนจัดการ"""
         with pytest.raises(ValueError):
             Product.from_dict("X", {"n": "Bad", "q": "abc", "p": 1.0, "c": "T"})
+
+
+# ══════════════════════════════════════════════════
+# SAM1-33: InventoryRepository — โหลด/บันทึกไฟล์
+# ══════════════════════════════════════════════════
+
+@pytest.fixture
+def repo(tmp_path):
+    """Repository ที่ชี้ไปยังไฟล์ชั่วคราว ไม่กระทบ data.json จริง"""
+    return InventoryRepository(str(tmp_path / "data_test.json"))
+
+
+class TestRepositoryLoad:
+
+    def test_returns_default_when_file_missing(self, repo):
+        """ไม่มีไฟล์ → ต้องได้ default 3 รายการ"""
+        inv = repo.load()
+        assert len(inv) == 3
+        assert set(inv) == {"101", "102", "103"}
+
+    def test_default_items_are_product_objects(self, repo):
+        """ค่าที่คืนต้องเป็น Product ไม่ใช่ dict ดิบ"""
+        inv = repo.load()
+        assert inv["101"] == Product("101", "Mama Noodles", 50, 6.0, "Food")
+        assert all(isinstance(p, Product) for p in inv.values())
+
+    def test_reads_existing_file(self, repo):
+        """มีไฟล์ → ต้องอ่านจากไฟล์"""
+        repo.path.write_text(json.dumps({"999": {"n": "Custom", "q": 7, "p": 99.0, "c": "Special"}}))
+        inv = repo.load()
+        assert inv == {"999": Product("999", "Custom", 7, 99.0, "Special")}
+
+    def test_empty_file_does_not_fall_back_to_default(self, repo):
+        """ไฟล์ที่เก็บ {} ไว้ ถือว่าสต๊อกว่าง ไม่ใช่สัญญาณให้โหลด default"""
+        repo.path.write_text("{}")
+        assert repo.load() == {}
+
+    def test_corrupted_file_falls_back_to_default(self, repo, capsys):
+        """[INV-10] ไฟล์เสีย → เตือนแล้วโหลด default แทนที่จะ crash"""
+        repo.path.write_text("{ this is not json")
+        inv = repo.load()
+        assert len(inv) == 3
+        assert "corrupted" in capsys.readouterr().out.lower()
+
+    def test_legacy_row_with_missing_keys_does_not_crash(self, repo):
+        """แถวเก่าที่ key ไม่ครบ ต้องอ่านผ่านโดยเติมค่า default"""
+        repo.path.write_text(json.dumps({"X": {"n": "Partial"}}))
+        assert repo.load()["X"] == Product("X", "Partial", 0, 0.0, "")
+
+
+class TestRepositorySave:
+
+    def test_creates_file(self, repo):
+        repo.save({"101": Product("101", "Mama Noodles", 50, 6.0, "Food")})
+        assert repo.path.exists()
+
+    def test_writes_legacy_short_keys(self, repo):
+        """ไฟล์ที่เขียนออกต้องยังเป็นรูปแบบ n/q/p/c เดิม"""
+        repo.save({"101": Product("101", "Mama Noodles", 50, 6.0, "Food")})
+        assert json.loads(repo.path.read_text()) == {
+            "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"}
+        }
+
+    def test_roundtrip_preserves_data(self, repo):
+        original = {
+            "101": Product("101", "Mama Noodles", 99, 6.0, "Food"),
+            "NEW": Product("NEW", "Test", 1, 1.0, "T"),
+        }
+        repo.save(original)
+        assert repo.load() == original
+
+    def test_overwrites_previous_content(self, repo):
+        repo.save({"101": Product("101", "Old", 1, 1.0, "T")})
+        repo.save({"ONLY": Product("ONLY", "Only Item", 1, 1.0, "T")})
+        assert set(repo.load()) == {"ONLY"}
+
+    def test_atomic_write_leaves_no_tmp_file(self, repo, tmp_path):
+        """[INV-11] เขียนผ่าน .tmp แล้ว replace — ห้ามเหลือไฟล์ .tmp ค้าง"""
+        repo.save({"101": Product("101", "Mama Noodles", 50, 6.0, "Food")})
+        assert list(tmp_path.glob("*.tmp")) == []
