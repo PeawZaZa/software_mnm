@@ -3,7 +3,7 @@
 
 | | |
 |---|---|
-| เวอร์ชันเอกสาร | 1.0 (สัปดาห์ที่ 13) — ปรับปรุงต่อในสัปดาห์ที่ 14–15 |
+| เวอร์ชันเอกสาร | 1.1 (สัปดาห์ที่ 14) — เพิ่ม Auto-backup · Packaging · Emergency SOP |
 | ใช้กับซอฟต์แวร์ | `v2.0.0-evolution` และใหม่กว่า |
 | ผู้จัดทำ | พนาวุฒน์ อภิปสันติ (Tech Lead) · ตรัยรัตน์ วงษ์สิทธิ์ (QA) |
 | ผู้อ่านเป้าหมาย | ผู้ดูแลระบบและนักพัฒนาที่จะรับช่วงต่อ — **อ่านเล่มนี้เล่มเดียวแล้วต้องทำงานต่อได้โดยไม่ต้องถามทีมเดิม** |
@@ -189,7 +189,18 @@ pytest -m smoke -q                     # ต้องได้ 3 passed
 python app_v2.py
 ```
 
-### 3.4 การตั้งค่า (`.env`)
+### 3.4 ช่องทางติดตั้งอื่น (สัปดาห์ที่ 14)
+
+| ช่องทาง | คำสั่ง | เหมาะกับ |
+|---|---|---|
+| Wheel | `pip install mini_inventory_system-2.0.1-py3-none-any.whl` แล้วรัน `mini-inventory` | เครื่องผู้ใช้ที่ไม่ต้องการ source code |
+| Source distribution | `pip install mini_inventory_system-2.0.1.tar.gz` | ติดตั้งจาก source (มีเทสต์และสคริปต์ติดตั้งมาด้วย) |
+| Docker | `docker build -t mini-inventory:v2.0.1 .` → `docker run -it --rm -v inventory-data:/app/data mini-inventory:v2.0.1` | เครื่องที่มี Docker — ข้อมูลอยู่ใน volume ไม่หายเมื่อลบ container |
+
+สร้างไฟล์แพ็กเกจเองด้วย `pip install build && python -m build` → ได้ไฟล์ใน `dist/`
+ไฟล์ที่ build แล้วพร้อม SHA256 อยู่ที่ [`week14/artifacts/`](week14/artifacts/)
+
+### 3.5 การตั้งค่า (`.env`)
 
 | ตัวแปร | ค่าใน `.env.example` | ถ้าไม่ตั้ง |
 |---|---|---|
@@ -201,7 +212,7 @@ python app_v2.py
 - ค่าใน environment จริงชนะค่าใน `.env` เช่น `INVENTORY_DB_PATH=test.json python app_v2.py`
 - **ห้าม commit `.env`** (ถูก ignore ไว้แล้ว) — ระบบนี้ไม่มีรหัสผ่านหรือกุญแจลับ แต่ path อาจเปิดเผยชื่อผู้ใช้ของเครื่อง
 
-### 3.5 ผลการติดตั้งบนสภาพแวดล้อมใหม่
+### 3.6 ผลการติดตั้งบนสภาพแวดล้อมใหม่
 
 ติดตั้งจาก `git clone` ลงโฟลเดอร์ว่างบน Windows 11 / Python 3.13.7 ใช้เวลา **25 วินาที** ผ่านทุกขั้น
 ดู [Clean Environment Installation Report](week13/Clean_Environment_Installation_Report.md)
@@ -215,7 +226,7 @@ python app_v2.py
 | Smoke | `pytest -m smoke -q` | ทุกครั้งหลังติดตั้ง/ย้ายเครื่อง | 3 passed (< 1 วินาที) |
 | Full regression | `pytest -v --cov=app_v2 --cov-report=term-missing` | ก่อน merge ทุกครั้ง | ผ่าน 100% · coverage ≥ 90% |
 | Lint | `flake8 . --count` | ก่อน merge | 0 |
-| Security | `bandit -r . -x ./test_app.py,./test_app_v2.py,./test_hardening.py,./test_deployment.py` | ก่อน release | No issues |
+| Security | `bandit -r . -x ./test_app.py,./test_app_v2.py,./test_hardening.py,./test_deployment.py,./test_disaster_recovery.py` | ก่อน release | No issues |
 | UAT | `python tools/run_uat.py` | ก่อน release | 8/8 |
 
 บันทึกผลหลังบำรุงรักษาล่าสุด: [`week13/evidence/post_maintenance_test.log`](week13/evidence/post_maintenance_test.log)
@@ -230,10 +241,20 @@ python app_v2.py
 |---|---|---|
 | เปิดร้าน | เปิดโปรแกรม | `cd software_mnm` → activate `.venv` → `python app_v2.py` |
 | ระหว่างวัน | ขาย/รับของ | เมนู 3 / เมนู 2 — ข้อมูลบันทึกทันทีทุกครั้ง ไม่ต้องกด save |
-| ปิดร้าน | สำรองข้อมูล | คัดลอกไฟล์ข้อมูลตามข้อ 5.2 |
+| ปิดร้าน | สำรองข้อมูลนอกเครื่อง | คัดลอกไฟล์ข้อมูลตามข้อ 5.2 (ระบบสำรองอัตโนมัติ 1 ก้าวอยู่แล้ว แต่ไฟล์ `.bak` อยู่บนดิสก์เดียวกัน) |
 | ทุกเดือน | ส่งรายงานซัพพลายเออร์ | เมนู 6 ดูรายการต้องสั่ง → เมนู 7 ส่งออก CSV |
 
 ### 5.2 สำรองข้อมูล (Backup)
+
+**อัตโนมัติ (ตั้งแต่สัปดาห์ที่ 14)** — ก่อนบันทึกทุกครั้ง ระบบคัดลอกไฟล์ข้อมูลเดิมเป็น `<ชื่อไฟล์>.bak`
+(เช่น `data/inventory_db.json.bak`) ถ้าไฟล์เดิมเสียอยู่แล้วจะ**ไม่**คัดลอก เพื่อไม่ให้ทับสำเนาที่ดี
+
+| | |
+|---|---|
+| RPO (ข้อมูลที่อาจหายสูงสุด) | การบันทึก 1 ครั้งล่าสุด — `.bak` คือสถานะก่อนรายการสุดท้าย |
+| RTO (เวลากู้คืน) | อัตโนมัติตอนเปิดโปรแกรม ~0.15 วินาที (วัดจาก drill สัปดาห์ที่ 14) |
+
+**ด้วยมือ (นอกเครื่อง)** — เพราะ `.bak` อยู่ดิสก์เดียวกับไฟล์หลัก ดิสก์เสียจะหายทั้งคู่
 
 ข้อมูลทั้งหมดอยู่ในไฟล์เดียว (`INVENTORY_DB_PATH`) สำรองด้วยการคัดลอกไฟล์ตอนที่**ปิดโปรแกรมแล้ว**
 
@@ -251,7 +272,9 @@ Copy-Item data\inventory_db.json "backups\inventory_db_$(Get-Date -Format yyyyMM
 
 | อาการ | สาเหตุ | สิ่งที่ต้องทำ |
 |---|---|---|
-| `Warning: Database file is corrupted. Loading default data.` | ไฟล์ข้อมูลเสียทั้งไฟล์ | ⚠️ **ออกจากโปรแกรมทันที (เมนู 5) ห้ามเพิ่ม/ตัดสต๊อก** — การบันทึกครั้งถัดไปจะเขียนทับไฟล์เสียด้วยข้อมูลตั้งต้น (ดู KI-03) จากนั้นคัดลอกไฟล์ล่าสุดใน `backups/` กลับมาแทน |
+| `Warning: Database file is corrupted. Restored data from backup <ชื่อ>.bak.` | ไฟล์หลักเสีย ระบบกู้จาก `.bak` ให้แล้ว | ใช้งานต่อได้ทันที — **ตรวจรายการล่าสุด 1 รายการ** (อาจหายไปตาม RPO) แล้วทำซ้ำถ้าจำเป็น |
+| `Warning: Database file is missing. Restored data from backup <ชื่อ>.bak.` | ไฟล์หลักถูกลบ | เหมือนข้อบน |
+| `Warning: Database file is corrupted. Loading default data.` | ไฟล์หลัก**และ** `.bak` เสียทั้งคู่ | ⚠️ **ออกจากโปรแกรมทันที (เมนู 5) ห้ามเพิ่ม/ตัดสต๊อก** — การบันทึกครั้งถัดไปจะเขียนทับด้วยข้อมูลตั้งต้น จากนั้นคัดลอกไฟล์ล่าสุดใน `backups/` กลับมาแทน |
 | `Warning: skipping corrupted row 'X'` | ข้อมูลเสียบางแถว | ข้อมูลแถวอื่นใช้ได้ปกติ เปิดไฟล์ด้วย text editor แก้แถว X หรือเพิ่มสินค้านั้นใหม่ผ่านเมนู 2 |
 | `Error: could not save data to disk.` | ดิสก์เต็ม / ไม่มีสิทธิ์เขียน / ไฟล์ถูกเปิดค้างในโปรแกรมอื่น | ระบบไม่ได้บันทึกการเปลี่ยนแปลงนั้น — แก้ต้นเหตุแล้วทำรายการซ้ำ |
 | `Error: cannot write CSV file` | โฟลเดอร์ไม่มี / ไฟล์ CSV เปิดค้างใน Excel | ปิดไฟล์ใน Excel หรือตรวจ path แล้วส่งออกใหม่ |
@@ -269,7 +292,7 @@ Copy-Item data\inventory_db.json "backups\inventory_db_$(Get-Date -Format yyyyMM
 | v1.1 | Sprint 1 | แก้ 9 จุดเสี่ยง (INV-4…12) + เทสต์ 37 เคส | [CHANGELOG](../CHANGELOG.md) |
 | v2.0 · v2.1 | Sprint 2 | Class-based · CR-01 · CR-02 · DEF-01/02/03 | [Defect Log](Defect_Log.md) |
 | `v2.0.0-evolution` | Sprint 3 | Hardening · UAT-DEF-01 · Production baseline | [Maintenance Summary](week12/Maintenance_Summary_Report_ISO14764.md) |
-| (สัปดาห์ที่ 13) | Phase 4 | ตั้งค่าผ่าน `.env` · setup script · smoke test | [Week 13](week13/README.md) |
+| `v2.0.1-evolution` | Phase 4 | ตั้งค่าผ่าน `.env` · setup script · smoke test · Auto-backup · Wheel/Docker | [Week 13](week13/README.md) · [Week 14](week14/README.md) |
 
 ### 6.2 Known Issues (ข้อจำกัดที่รับทราบ)
 
@@ -277,7 +300,7 @@ Copy-Item data\inventory_db.json "backups\inventory_db_$(Get-Date -Format yyyyMM
 |---|---|---|---|
 | KI-01 | ใช้ได้ทีละ 1 คน ไม่มี file locking | เปิด 2 หน้าต่างพร้อมกัน หน้าต่างที่บันทึกทีหลังจะทับข้อมูลของอีกหน้าต่าง | เปิดโปรแกรมทีละหน้าต่าง |
 | KI-02 | CSV ส่งออกสินค้าทั้งหมด ไม่ใช่เฉพาะสต๊อกต่ำ | ต้องกรองเองใน Excel | กรองคอลัมน์ `reorder_point` / `qty` · FB-01 ใน Future Backlog |
-| KI-03 | ไฟล์ข้อมูลเสียทั้งไฟล์ → โหลดข้อมูลตั้งต้น แล้วการบันทึกครั้งถัดไปจะทับไฟล์เสีย | ถ้าผู้ใช้ทำรายการต่อ ข้อมูลเก่าจะกู้จากไฟล์นั้นไม่ได้ | ทำตามข้อ 5.3 · *แผนแก้: สำรองอัตโนมัติ `.bak` ในสัปดาห์ที่ 14* |
+| ~~KI-03~~ | ~~ไฟล์ข้อมูลเสียทั้งไฟล์ → โหลดข้อมูลตั้งต้น~~ | **แก้แล้วสัปดาห์ที่ 14** — กู้จาก `.bak` อัตโนมัติ เหลือความเสี่ยงเฉพาะกรณีไฟล์หลักและ `.bak` เสียพร้อมกัน | สำรองนอกเครื่องตามข้อ 5.2 |
 | KI-04 | DEF-04 ฟิลด์ที่หายจาก `data.json` ถูกเติม default โดยไม่เตือน | เกิดเฉพาะเมื่อแก้ไฟล์ด้วยมือ | อย่าแก้ไฟล์ข้อมูลด้วยมือ |
 | KI-05 | GitHub Actions ไม่ทำงาน (บัญชีติด billing) | CI ไม่ตรวจอัตโนมัติ | รันคำสั่งบทที่ 4 บนเครื่องก่อน merge |
 | KI-06 | รหัสสินค้าแยกตัวพิมพ์เล็ก-ใหญ่ (`p1` ≠ `P1`) | เพิ่มซ้ำโดยไม่ตั้งใจได้ | ใช้ตัวพิมพ์ใหญ่เสมอ |
@@ -296,3 +319,54 @@ Copy-Item data\inventory_db.json "backups\inventory_db_$(Get-Date -Format yyyyMM
 1. ห้ามเรียก `input()`/`print()` นอก `ConsoleUI` และห้ามอ่าน/เขียนไฟล์ข้อมูลนอก `InventoryRepository`
 2. ทุก PR ต้องผ่าน flake8 · bandit · pytest coverage ≥ 90% และมีผู้ review ที่ไม่ใช่ผู้เปิด PR
 3. ทุกการเปลี่ยน data model ต้องมีเทสต์ "ไฟล์ถูกไวยากรณ์แต่ค่าผิด" (บทเรียนจาก DEF-03)
+
+---
+
+## บทที่ 7 · Handover — Emergency SOP & Escalation (สัปดาห์ที่ 14)
+
+### 7.1 Emergency SOP
+
+| สถานการณ์ | ขั้นตอน |
+|---|---|
+| **โปรแกรมค้าง/ปิดไม่ได้** | กด `Ctrl+C` → เปิดใหม่ด้วย `python app_v2.py` — ข้อมูลที่บันทึกแล้วไม่หาย เพราะทุกการบันทึกเป็น atomic |
+| **ไฟล์ข้อมูลเสีย** | เปิดโปรแกรมใหม่ ระบบกู้จาก `.bak` เอง → ตรวจรายการล่าสุด (บทที่ 5.3) |
+| **เวอร์ชันใหม่บน `main` มีบั๊กวิกฤต** | Rollback ตามข้อ 7.2 |
+
+### 7.2 Rollback เวอร์ชัน (ซ้อมจริงแล้วสัปดาห์ที่ 14 — RTO ~1.4 วินาที)
+
+> ⚠️ **บทเรียนจากการซ้อม:** commit ก่อนหน้าบน `main` **ไม่ใช่**จุดที่ปลอดภัยเสมอไป
+> ก่อน release `v2.0.0-evolution` สาขา `main` (`a10ea24`) รันเทสต์ของตัวเองไม่ผ่าน 24 เคส
+> **ให้ถอยไปที่แท็กล่าสุดที่ผ่านเทสต์ครบเท่านั้น**
+
+```bash
+git checkout main && git pull
+git tag -l                                   # เลือกแท็กล่าสุดที่ผ่านเทสต์ เช่น v2.0.0-evolution
+git worktree add ../verify-tag <tag>      # ตรวจก่อนว่าแท็กผ่านเทสต์จริง ในโฟลเดอร์แยก
+(cd ../verify-tag && python -m pytest -q) && git worktree remove ../verify-tag
+git restore --source <tag> --staged --worktree -- .
+git commit -m "Emergency rollback to <tag>"
+python -m pytest -q                          # ต้องผ่าน 100%
+git tag -a <tag>-rollback -m "Emergency rollback to <tag>"
+git push origin main --follow-tags
+```
+
+**ห้ามใช้ `git reset --hard` + `git push --force` บน `main`** — ลบประวัติที่คนอื่นดึงไปแล้ว
+ถ้าแค่ต้องการยกเลิก merge ล่าสุดและ commit ก่อนหน้า**ผ่านเทสต์**: `git revert -m 1 <merge-commit>`
+
+### 7.3 Data Migration — เพิ่มฟิลด์ใหม่ในไฟล์ JSON อย่างปลอดภัย
+
+1. เพิ่ม field ใน `Product` **พร้อมค่า default** (ไฟล์เก่าจะอ่านได้)
+2. เพิ่ม key ย่อใหม่ใน `to_dict()` และใช้ `data.get("<key>", <default>)` ใน `from_dict()`
+3. เพิ่มเทสต์: อ่านไฟล์เก่าที่ไม่มี key นี้ได้ · ค่าผิดชนิดถูกข้ามรายแถว · ค่าติดลบถูกปฏิเสธ
+4. **สำรองไฟล์ข้อมูลจริงก่อนติดตั้งเวอร์ชันใหม่** — ไฟล์ที่บันทึกโดยเวอร์ชันใหม่ เวอร์ชันเก่ายังอ่านได้ (key ที่ไม่รู้จักถูกข้าม) แต่ค่าของ field ใหม่จะหายถ้ากลับไปบันทึกด้วยเวอร์ชันเก่า
+
+### 7.4 Escalation Path
+
+| ระดับ | เรื่อง | ติดต่อ | GitHub |
+|---|---|---|---|
+| 1 | ใช้งาน / ติดตั้ง / ข้อมูลเสีย | ตรัยรัตน์ วงษ์สิทธิ์ (QA) | `TriratWongsit` |
+| 2 | บั๊กในโค้ด / ฟีเจอร์ | ทวีชัย ทิใจ (Developer) | `Saihakuto` |
+| 3 | สถาปัตยกรรม / Rollback / Release | พนาวุฒน์ อภิปสันติ (Tech Lead) | `Phanawut` |
+| 4 | ขอบเขต / งบ / คำขอใหม่ | ปวริศ คูณศรี (PM) | `PeawZaZa` |
+
+เปิด GitHub Issue พร้อม Steps to Reproduce เสมอ (ตัวอย่าง: [#22](https://github.com/PeawZaZa/software_mnm/issues/22))

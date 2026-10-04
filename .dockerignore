@@ -1,0 +1,13 @@
+.git
+.venv
+venv
+__pycache__
+.pytest_cache
+.coverage
+data
+exports
+dist
+build
+*.egg-info
+docs
+การบ้าน

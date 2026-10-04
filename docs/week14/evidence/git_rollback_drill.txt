@@ -1,0 +1,51 @@
+# Git Rollback Drill — 2026-10-05T01:57:10+07:00 · scratch clone (ไม่แตะ repo จริง)
+
+## 0) เตรียม: จำลอง release v2.0 บน main
+main ก่อน release: a10ea24 Merge pull request #15 from PeawZaZa/revert-14-feature/test-app
+main หลัง release: 0667cd3 Release v2.0.x (simulated PR merge into main)
+195 passed in 0.94s
+
+## 1) เหตุฉุกเฉิน: สมมติ v2.0 พังบน production → ถอยกลับสู่ baseline
+$ git revert -m 1 HEAD --no-edit
+[main edb409b] Revert "Release v2.0.x (simulated PR merge into main)"
+ Date: Mon Oct 5 01:57:12 2026 +0700
+$ python -m pytest -q   # ชุดทดสอบของเวอร์ชันเดิม
+24 failed, 13 passed in 0.36s
+$ git tag -a v1.0.0-rollback -m "Emergency rollback to baseline v1.0.0"
+Select menu: Bye
+RTO (revert → test → tag → smoke run): 1131 ms
+
+## 2) ตรวจว่าประวัติไม่หาย (ไม่ใช้ reset --hard)
+edb409b Revert "Release v2.0.x (simulated PR merge into main)"
+0667cd3 Release v2.0.x (simulated PR merge into main)
+99837da wip: week 14 code (drill input)
+bb22b1b Merge branch 'chore/week13-deployment-readiness' into develop [W13]
+จำนวน commit ที่ยังเข้าถึงได้จาก main: 107
+
+## 3) Roll-forward: แก้เสร็จแล้วคืน v2.0 ด้วยการ revert ตัว revert
+[main a88b326] Reapply "Release v2.0.x (simulated PR merge into main)"
+195 passed in 0.92s
+Roll-forward time: 1537 ms
+a88b326 Reapply "Release v2.0.x (simulated PR merge into main)"
+edb409b Revert "Release v2.0.x (simulated PR merge into main)"
+0667cd3 Release v2.0.x (simulated PR merge into main)
+
+## 1b) ข้อค้นพบ: เป้าหมายการถอยต้องเป็นแท็กที่ผ่านการทดสอบ ไม่ใช่ commit ก่อนหน้าบน main
+main ก่อน release (a10ea24) รันเทสต์ของตัวเองไม่ผ่าน — 24 failed: TypeError: load() takes 0 positional arguments but 1 was given
+ตรวจแท็กที่มี:
+  v1.0.0-baseline: no tests ran in 0.00s
+  v2.0: 104 passed in 0.27s
+  v2.1: 148 passed in 0.44s
+
+## 1c) ขั้นตอนที่ถูกต้อง: คืนไฟล์จากแท็กที่ผ่านการทดสอบล่าสุด (v2.1) เป็น commit ใหม่บน main
+(ก่อนเริ่มขั้นนี้ ตั้ง main ของ scratch clone กลับไปที่ release จำลอง 0667cd3 เพื่อซ้อมใหม่จากจุดเดียวกัน)
+main ปัจจุบัน (release ที่สมมติว่าพัง): 0667cd3 Release v2.0.x (simulated PR merge into main)
+$ git restore --source v2.1 --staged --worktree -- .
+$ git commit -m "Emergency rollback to last verified release v2.1"
+bc324ca Emergency rollback to last verified release v2.1
+$ python -m pytest -q
+148 passed in 0.45s
+Select menu: Bye
+RTO (restore → commit → test → tag → smoke run): 1370 ms
+ประวัติยังอยู่ครบ: 107 commits · bc324ca Emergency rollback to last verified release v2.1 0667cd3 Release v2.0.x (simulated PR merge into main) 99837da wip: week 14 code (drill input) 
+ตรวจว่าเนื้อหาตรงกับ v2.1: ตรงกันทุกไฟล์

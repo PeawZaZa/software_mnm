@@ -153,5 +153,5 @@ STATUS: SUCCESS - NO REGRESSION DETECTED
 | Code coverage | **99%** |
 | Regression | **186/186 passed** — 0 regression |
 | Clean deployment success | **1/1 ครั้ง** (หลังแก้ `setup.sh`) · 25 วินาที |
-| Max cyclomatic complexity | **7** |
+| Max cyclomatic complexity | **9** (`load_env_file` ใหม่) — *แก้ไขภายหลัง: ตัวเลข 7 ที่รายงานไว้เดิมผิด ตรวจพบและ refactor เหลือ 5 ในสัปดาห์ที่ 14* |
 | Flake8 / Bandit | **0 / 0** |

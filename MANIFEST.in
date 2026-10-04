@@ -1,0 +1,4 @@
+# ให้ source distribution (.tar.gz) ติดตั้งและทดสอบซ้ำได้ด้วยตัวเอง
+include CHANGELOG.md requirements.txt requirements-dev.txt .env.example pytest.ini .flake8
+include setup.sh setup.ps1 Dockerfile
+include test_*.py

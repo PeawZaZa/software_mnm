@@ -1,0 +1,3 @@
+$ pip-audit -r requirements.txt -r requirements-dev.txt
+No known vulnerabilities found
+exit code: 0
