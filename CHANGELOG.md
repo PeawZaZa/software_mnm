@@ -3,6 +3,31 @@
 บันทึกการเปลี่ยนแปลงทั้งหมดของโครงการ — รูปแบบตาม [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/)
 และเลขเวอร์ชันตาม [Semantic Versioning 2.0.0](https://semver.org/)
 
+## [2.0.1-evolution] — 2026-10-05 · Deployment & Recoverability
+
+Maintenance release หลัง Scope Freeze — **ไม่มีฟีเจอร์ใหม่ที่ผู้ใช้เห็น** เป็นงาน Adaptive (ติดตั้ง/ตั้งค่า)
+และ Preventive (กู้ข้อมูล) ตามใบงานสัปดาห์ที่ 13–14 จึงขึ้นเฉพาะเลข PATCH
+
+### Added
+- `.env` / environment variables: `INVENTORY_DB_PATH`, `REPORT_EXPORT_DIR` (ไม่ตั้ง = ทำงานแบบ 2.0.0 ทุกประการ)
+- พิมพ์แค่ชื่อไฟล์ในเมนู 7 → บันทึก CSV ลงโฟลเดอร์ `REPORT_EXPORT_DIR`
+- สำรองไฟล์ข้อมูลอัตโนมัติเป็น `<ชื่อไฟล์>.bak` ก่อนบันทึกทุกครั้ง และกู้คืนอัตโนมัติเมื่อไฟล์หลักเสียหรือหาย
+- `setup.sh` / `setup.ps1` ติดตั้งด้วยคำสั่งเดียว · `requirements.txt` · `.env.example`
+- แพ็กเกจ `pyproject.toml` (wheel + sdist) พร้อมคำสั่ง `mini-inventory` · `Dockerfile`
+- Smoke tests (`pytest -m smoke`) และ disaster-recovery tests — รวม **195 tests** coverage 99%
+
+### Changed
+- `ConsoleUI` รับ `input_fn`/`print_fn` ค่า default ตอนสร้าง object (ทดสอบ `main()` ได้)
+- `requirements*.txt` เป็น ASCII ล้วน (pip-audit บน Windows อ่าน cp1252)
+
+### Fixed
+- Known issue KI-03: ไฟล์ข้อมูลเสียทั้งไฟล์แล้วการบันทึกครั้งถัดไปทับข้อมูลเดิม — กู้จาก `.bak` แทน
+- `setup.sh` เลือก `python3` ที่เป็นทางลัด Microsoft Store บน Windows แล้วหยุดทำงานเงียบ ๆ
+- `load_env_file()` complexity 9 → 5 (แยก `_parse_env_line()`)
+
+### Security
+- pip-audit: 0 CVEs (runtime 0 แพ็กเกจ · dev 17 แพ็กเกจ) · Bandit 0 issues · Docker image รันด้วยผู้ใช้ที่ไม่ใช่ root
+
 ## [2.0.0-evolution] — 2026-10-05 · Production Baseline
 
 เวอร์ชันส่งมอบทางการ รวมทุกอย่างตั้งแต่ `v1.0.0-baseline` — Sprint 1 (v1.1) · Sprint 2 (v2.0) ·

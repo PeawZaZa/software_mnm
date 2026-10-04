@@ -1,0 +1,22 @@
+# Data Corruption Drill — 2026-10-05T01:58:00+07:00 · commit 99837da (week 14 code) · CLI จริง
+
+## 1) ใช้งานปกติ: เพิ่ม Milk (10) แล้วขาย 3 → บันทึก 2 ครั้ง (ครั้งที่ 2 สร้าง .bak)
+Select menu: Enter ID: Enter Name: Enter Qty: Enter Price: Enter Category: Enter Barcode (leave blank if none): Enter Reorder Point: Done.
+Select menu: Enter product ID to cut stock: How many items out?: Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!
+inventory_db.json
+inventory_db.json.bak
+
+## 2) ภัยพิบัติ: ลบปีกกาปิดท้ายของ inventory_db.json
+last 20 chars now: '89",\n    "r": 5\n  }\n'
+json.decoder.JSONDecodeError: Expecting ',' delimiter: line 34 column 1 (char 447)
+
+## 3) เปิดโปรแกรมใหม่ → ดูสินค้า (เมนู 1) → ขายต่อ 2 ชิ้น
+Warning: Database file is corrupted. Restored data from backup inventory_db.json.bak.
+ID: P1 | Name: Milk | Stock: 10 | Price: 20.0 THB | Type: Dairy
+Select menu: Enter product ID to cut stock: How many items out?: Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!
+Select menu: Bye
+เวลาตั้งแต่เปิดโปรแกรมจนกู้ข้อมูลและทำงานต่อได้: 150 ms
+
+## 4) ตรวจไฟล์หลังกู้
+inventory_db.json valid · P1 qty = 8
+inventory_db.json.bak valid · P1 qty = 10

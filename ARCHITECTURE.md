@@ -1,6 +1,9 @@
 # System Architecture Document
 ## Inventory System v2.1 (Class-Based + CR-01/CR-02)
 
+> 📌 เอกสารนี้บันทึกการออกแบบถึง v2.1 · สถาปัตยกรรมฉบับส่งมอบ (As-Built v2.0.1 — เพิ่ม `Settings`,
+> auto-backup และ Class diagram) อยู่ที่ [O&M Manual บทที่ 2](docs/System_Operations_and_Maintenance_Manual.md#บทที่-2--as-built-architecture)
+
 | # | ชื่อ | ตำแหน่ง |
 |---|---|---|
 | 1 | ปวริศ คูณศรี | Project Manager |
