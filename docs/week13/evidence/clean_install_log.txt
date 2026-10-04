@@ -1,0 +1,51 @@
+# Clean Environment Installation Log
+# date: 2026-10-05T01:45:58+07:00
+# host: Windows 11 · Git Bash · system Python 3.13.7 · ไม่มี .venv / .env / data.json มาก่อน
+# source: git clone --branch chore/week13-deployment-readiness (commit ab5d167)
+
+$ git clone <repo> software_mnm && cd software_mnm
+$ ls -A   # ก่อนติดตั้ง: ไม่มี .venv / .env / data
+.env.example .flake8 .git .gitattributes .github .gitignore ARCHITECTURE.md CHANGELOG.md Phase2_Inventory_System_Report.md README.md app_v1.py app_v2.py architectural detective.md combined_report_phase1_2.md docs phase1 3 report.md pytest.ini requirements-dev.txt requirements.txt setup.ps1 setup.sh test_app.py test_app_v2.py test_deployment.py test_hardening.py tools 
+
+$ ./setup.sh
+--- Starting Clean Environment Setup ---
+[1/5] Python: Python 3.13.7
+[2/5] Virtual environment: .venv
+[3/5] Dependencies installed
+[4/5] Created .env from .env.example
+...                                                                      [100%]
+3 passed, 183 deselected in 0.24s
+[5/5] Smoke test passed
+--- Installation Completed Successfully ---
+Run the program:  source .venv/bin/activate  (Windows: source .venv/Scripts/activate)
+                  python app_v2.py
+exit code: 0
+
+# elapsed: 25 seconds
+
+$ source .venv/Scripts/activate && pip list
+Package        Version
+-------------- -------
+bandit         1.9.4
+colorama       0.4.6
+coverage       7.16.2
+flake8         7.4.1
+iniconfig      2.3.0
+markdown-it-py 4.2.0
+mccabe         0.7.0
+mdurl          0.1.2
+packaging      26.3
+pip            26.2.1
+pluggy         1.6.0
+pycodestyle    2.15.0
+pyflakes       4.0.2
+Pygments       2.21.0
+pytest         9.1.1
+pytest-cov     7.1.0
+PyYAML         6.0.3
+rich           15.0.0
+stevedore      5.9.1
+
+$ cat .env
+INVENTORY_DB_PATH=data/inventory_db.json
+REPORT_EXPORT_DIR=exports

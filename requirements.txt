@@ -1,0 +1,9 @@
+# Runtime dependencies
+# --------------------
+# The program uses the Python standard library only
+# (json, csv, os, shutil, tempfile, pathlib, dataclasses),
+# so nothing has to be installed to run it. Requires Python >= 3.10.
+#
+# Development / CI tools are listed in requirements-dev.txt.
+# Keep this file ASCII-only: pip-audit on Windows reads it with the
+# system code page (cp1252) and fails on non-ASCII comments.

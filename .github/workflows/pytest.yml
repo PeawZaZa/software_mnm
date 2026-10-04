@@ -32,7 +32,7 @@ jobs:
       run: flake8 . --count --statistics
 
     - name: Security scan (Bandit — ล้มเมื่อพบ Medium ขึ้นไป)
-      run: bandit -r . -x ./test_app.py,./test_app_v2.py,./test_hardening.py -ll
+      run: bandit -r . -x ./test_app.py,./test_app_v2.py,./test_hardening.py,./test_deployment.py,./test_disaster_recovery.py -ll
 
     - name: Run PyTest with coverage (ต้องไม่ต่ำกว่า 90%)
       run: pytest -v --cov=app_v2 --cov-report=term-missing --cov-fail-under=90

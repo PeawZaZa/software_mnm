@@ -1,0 +1,2 @@
+2d2a36b4435a0b7fac58cc4c725057838af9b27011fa60f5d1b9d8acbeb1b5b8 *mini_inventory_system-2.0.1-py3-none-any.whl
+72720b5d86d0646cecd6d920f0da8ea5b67a0c1c4b00b64083248d5c513fbb13 *mini_inventory_system-2.0.1.tar.gz

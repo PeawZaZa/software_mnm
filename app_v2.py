@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,57 @@ from pathlib import Path
 db = "data.json"
 
 SAVE_FAILED_MESSAGE = "Error: could not save data to disk. No changes were made."
+ENV_FILE = ".env"
+
+
+def _parse_env_line(line):
+    """คืน (key, value) จากบรรทัด KEY=VALUE หรือ None ถ้าเป็นบรรทัดว่าง/คอมเมนต์/ไม่มี ="""
+    line = line.strip()
+    if not line or line.startswith("#") or "=" not in line:
+        return None
+    key, value = (part.strip() for part in line.split("=", 1))
+    return (key, value.strip("\"'")) if key else None
+
+
+def load_env_file(path=ENV_FILE):
+    """
+    [W13] อ่านไฟล์ .env (บรรทัดละ KEY=VALUE) เข้า os.environ — ไม่ใช้ไลบรารีภายนอก
+    ค่าที่ตั้งไว้ใน environment อยู่แล้วจะไม่ถูกทับ เพื่อให้สั่งค่าชั่วคราวจาก command line ได้
+    """
+    env_path = Path(path)
+    if not env_path.is_file():
+        return {}
+    loaded = {}
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        pair = _parse_env_line(line)
+        if pair is not None and pair[0] not in os.environ:
+            key, value = pair
+            os.environ[key] = value
+            loaded[key] = value
+    return loaded
+
+
+@dataclass
+class Settings:
+    """[W13] ค่าที่ผันแปรตามเครื่อง แยกออกจากโค้ด (Twelve-Factor App ข้อ III: Config)"""
+
+    db_path: Path
+    export_dir: Path | None = None
+
+    @classmethod
+    def from_env(cls, environ=None):
+        environ = os.environ if environ is None else environ
+        export_dir = environ.get("REPORT_EXPORT_DIR")
+        return cls(
+            db_path=Path(environ.get("INVENTORY_DB_PATH") or db),
+            export_dir=Path(export_dir) if export_dir else None,
+        )
+
+    def prepare_directories(self):
+        """สร้างโฟลเดอร์ข้อมูลและโฟลเดอร์รายงานถ้ายังไม่มี (ทำครั้งเดียวตอนเปิดโปรแกรม)"""
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.export_dir is not None:
+            self.export_dir.mkdir(parents=True, exist_ok=True)
 
 
 @dataclass
@@ -73,21 +125,43 @@ class InventoryRepository:
         # อ่านค่า db ตอนถูกเรียก ไม่ใช่ตอนนิยามคลาส เพื่อให้ monkeypatch ใน test ทำงานได้
         self.path = Path(path if path is not None else db)
 
+    @property
+    def backup_path(self):
+        """[W14] สำเนาสำรองย้อนหลัง 1 ก้าว — ถูกเขียนก่อนบันทึกทุกครั้ง"""
+        return self.path.with_name(self.path.name + ".bak")
+
+    @staticmethod
+    def _read_json_object(path):
+        """อ่านไฟล์ที่ต้องเป็น JSON object คืน dict หรือ None ถ้าไม่มีไฟล์/อ่านไม่ได้/ผิดรูปแบบ"""
+        # [W11] ระบุ exception ให้เจาะจง — json.JSONDecodeError เป็น subclass ของ ValueError
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, ValueError):
+            return None
+        return raw if isinstance(raw, dict) else None
+
+    def _load_raw(self):
+        """
+        [INV-10] ไฟล์เสียต้องไม่ทำให้โปรแกรมตาย
+        [W14] ไฟล์หลักเสียหรือหายไป → กู้จาก .bak อัตโนมัติก่อน ค่อยถอยไปใช้ข้อมูลตั้งต้น
+        """
+        if not self.path.exists() and not self.backup_path.exists():
+            return self.DEFAULT_DATA  # เปิดครั้งแรก ยังไม่เคยมีข้อมูล
+        raw = self._read_json_object(self.path)
+        if raw is not None:
+            return raw
+        problem = "is corrupted" if self.path.exists() else "is missing"
+        backup = self._read_json_object(self.backup_path)
+        if backup is not None:
+            print(f"Warning: Database file {problem}. "
+                  f"Restored data from backup {self.backup_path.name}.")
+            return backup
+        print(f"Warning: Database file {problem}. Loading default data.")
+        return self.DEFAULT_DATA
+
     def load(self):
-        """โหลดข้อมูลเป็น dict[str, Product] หากไฟล์เสียหรือไม่มีจะใช้ค่าเริ่มต้น"""
-        if self.path.exists():
-            # [INV-10] ถ้าไฟล์เสียหรืออ่านไม่ได้ ให้โหลด default แทน
-            # [W11] ระบุ exception ให้เจาะจง แทน except Exception ครอบจักรวาล
-            try:
-                raw = json.loads(self.path.read_text(encoding="utf-8"))
-                if not isinstance(raw, dict):
-                    raise ValueError("top-level JSON must be an object")
-            except (OSError, UnicodeDecodeError, ValueError):
-                # json.JSONDecodeError เป็น subclass ของ ValueError
-                print("Warning: Database file is corrupted. Loading default data.")
-                raw = self.DEFAULT_DATA
-        else:
-            raw = self.DEFAULT_DATA
+        """โหลดข้อมูลเป็น dict[str, Product]"""
+        raw = self._load_raw()
         inventory = {}
         for pid, item in raw.items():
             try:
@@ -116,6 +190,10 @@ class InventoryRepository:
                 json.dump(payload, f, ensure_ascii=False, indent=2)
                 f.flush()
                 os.fsync(f.fileno())  # ให้ข้อมูลลงดิสก์จริงก่อนสลับไฟล์
+            # [W14] Rolling backup: เก็บไฟล์เดิมไว้ 1 ก้าว — ข้ามถ้าไฟล์เดิมเสีย
+            # เพื่อไม่ให้ไฟล์เสียไปทับสำเนาดีที่เพิ่งใช้กู้ข้อมูล
+            if self._read_json_object(self.path) is not None:
+                shutil.copy2(self.path, self.backup_path)
             os.replace(temp_name, self.path)
             return True
         except OSError as e:
@@ -246,12 +324,15 @@ class CsvReportExporter:
 class ConsoleUI:
     """[SAM1-37] ชั้นติดต่อผู้ใช้ — รับ input, พิมพ์ผล และ route ไปยัง service เท่านั้น"""
 
-    def __init__(self, service, input_fn=input, print_fn=print, exporter=None):
+    def __init__(self, service, input_fn=None, print_fn=None, exporter=None,
+                 export_dir=None):
         # inject input/print เพื่อให้เขียน unit test ได้โดยไม่ต้อง monkeypatch builtins
         self.service = service
-        self.input = input_fn
-        self.print = print_fn
+        # ค่า default ผูกตอนสร้าง object ไม่ใช่ตอนนิยามคลาส — smoke test แทน input/print ได้
+        self.input = input_fn if input_fn is not None else input
+        self.print = print_fn if print_fn is not None else print
         self.exporter = exporter if exporter is not None else CsvReportExporter()
+        self.export_dir = Path(export_dir) if export_dir is not None else None  # [W13]
 
     EXIT_CHOICE = "5"
 
@@ -341,9 +422,19 @@ class ConsoleUI:
             )
         self.print("-" * 50)
 
+    def export_path(self, raw):
+        """
+        [W13] ชื่อไฟล์เปล่า ๆ จะถูกวางในโฟลเดอร์รายงาน (REPORT_EXPORT_DIR)
+        ส่วน path ที่ระบุโฟลเดอร์มาด้วยจะใช้ตามที่ผู้ใช้พิมพ์
+        """
+        path = Path(raw.strip())
+        if self.export_dir is not None and path.parent == Path("."):
+            return self.export_dir / path
+        return path
+
     def handle_export(self):
         """[CR-02] ส่งออกรายงานเป็น CSV"""
-        path = self.input("Enter output CSV path: ")
+        path = self.export_path(self.input("Enter output CSV path: "))
         try:
             rows = self.exporter.export(self.service.inventory, path)
         except OSError as e:
@@ -378,7 +469,11 @@ def save(inventory):
 
 
 def main():
-    ConsoleUI(InventoryService(InventoryRepository(db))).run()
+    load_env_file()  # [W13] อ่าน .env ในโฟลเดอร์ที่สั่งรัน (ถ้ามี)
+    settings = Settings.from_env()
+    settings.prepare_directories()
+    service = InventoryService(InventoryRepository(settings.db_path))
+    ConsoleUI(service, export_dir=settings.export_dir).run()
 
 
 if __name__ == "__main__":

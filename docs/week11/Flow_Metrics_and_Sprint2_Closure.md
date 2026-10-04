@@ -185,17 +185,18 @@ PR ทั้ง 4 ใบถูก merge โดยคนเปิดเองภ�
 
 | รหัส | งาน | ผู้รับผิดชอบ (A) | ประมาณการ |
 |---|---|---|---:|
-| S3-01 | Flake8 clean-up + lint config | Tech Lead | 4 ชม. |
-| S3-02 | Bandit security scan + รายงาน | QA | 4 ชม. |
-| S3-03 | Refactor code smells | Developer | 4 ชม. |
-| S3-04 | Atomic I/O + exception handling | Developer | 4 ชม. |
-| S3-05 | Integration test + coverage ≥ 90% + CI gates | QA | 4 ชม. |
-| S3-06 | UAT scenarios · ดำเนินการ · ใบ sign-off | QA | 4 ชม. |
-| S3-07 | แก้ข้อบกพร่องจาก UAT | Developer | 4 ชม. |
-| S3-08 | Release `v2.0.0-evolution` (PR → `main`, tag, CHANGELOG) | Tech Lead | 4 ชม. |
-| S3-09 | Maintenance Summary Report (ISO/IEC 14764) | Project Manager | 4 ชม. |
+| S3-01 (SAM1-49) | Flake8 clean-up + lint config | Tech Lead | 4 ชม. |
+| S3-02 (SAM1-50) | Bandit security scan + รายงาน | QA | 4 ชม. |
+| S3-03 (SAM1-51) | Refactor code smells | Developer | 4 ชม. |
+| S3-04 (SAM1-52) | Atomic I/O + exception handling | Developer | 4 ชม. |
+| S3-05 (SAM1-53) | Integration test + coverage ≥ 90% + CI gates | QA | 4 ชม. |
+| S3-06 (SAM1-54) | UAT scenarios · ดำเนินการ · ใบ sign-off | QA | 4 ชม. |
+| S3-07 (SAM1-55) | แก้ข้อบกพร่องจาก UAT | Developer | 4 ชม. |
+| S3-08 (SAM1-56) | Release `v2.0.0-evolution` (PR → `main`, tag, CHANGELOG) | Tech Lead | 4 ชม. |
+| S3-09 (SAM1-57) | Maintenance Summary Report (ISO/IEC 14764) | Project Manager | 4 ชม. |
 | | **รวม** | | **36 ชม.** |
 
-> ⬜ **ต้องทำใน Jira:** กด Complete Sprint 2 → สร้าง Sprint 3 → สร้าง issue 9 ใบตามตาราง
-> (Jira จะออกเลข SAM1-49 ขึ้นไป) → Start Sprint ด้วยวันที่ 2026-09-08 ถึง 2026-09-21
-> แล้วแคปหน้าจอ Velocity Report หลัง Complete Sprint 2
+> ✅ **ทำใน Jira แล้ว (2026-10-05 ผ่าน Atlassian connector):** Sprint 2 ปิดแล้ว · สร้างงาน SAM1-49…57 เข้า Sprint 3
+> · Start Sprint 3 วันที่ 2026-09-08 → 2026-09-21 · เพิ่ม UAT-DEF-01 (SAM1-58) ระหว่าง sprint
+> · ย้ายงานเก่าที่ Done แล้ว 10 ใบที่ค้างอยู่ใน Sprint 3 กลับไป Backlog เพื่อไม่ให้ velocity เพี้ยน
+> ⬜ ยังต้องแคปหน้าจอ Velocity Report เอง

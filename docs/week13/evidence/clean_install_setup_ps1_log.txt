@@ -1,0 +1,17 @@
+﻿# setup.ps1 clean-install log
+# date: 2026-10-05T01:52:55 · Windows PowerShell 5.1.26100.9444 · fresh git clone
+
+PS> powershell -ExecutionPolicy Bypass -File setup.ps1
+--- Starting Clean Environment Setup ---
+[1/5] Python: Python 3.13.7
+[2/5] Virtual environment: .venv
+[3/5] Dependencies installed
+[4/5] Created .env from .env.example
+...                                                                      [100%]
+3 passed, 183 deselected in 0.20s
+[5/5] Smoke test passed
+--- Installation Completed Successfully ---
+Run the program:  .\.venv\Scripts\Activate.ps1 ; python app_v2.py
+
+# exit code: 0
+# elapsed: 19 seconds

@@ -39,5 +39,6 @@ python app_v2.py        # Python ≥ 3.10 ไม่ต้องติดตั�
 
 - ใช้งานได้ทีละ 1 คน (CLI + ไฟล์ JSON) ยังไม่รองรับหลายคนพร้อมกัน
 - CSV ส่งออกสินค้าทั้งหมด — ส่งออกเฉพาะสต๊อกต่ำอยู่ใน Future Backlog v3.0
+- DEF-04 (Low): ถ้า `data.json` ถูกแก้ด้วยมือจนฟิลด์หายไป ระบบเติมค่า default ให้โดยไม่เตือน
 
 รายละเอียดทั้งหมดดูใน [CHANGELOG.md](../../CHANGELOG.md#200-evolution--2026-10-05--production-baseline)

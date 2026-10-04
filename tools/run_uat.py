@@ -10,7 +10,7 @@ run_uat.py — รัน UAT Scenarios กับโปรแกรมจริ�
 
 import csv
 import os
-import subprocess
+import subprocess  # nosec B404 — ใช้รันโปรแกรมของโปรเจกต์เองเพื่อทำ UAT เท่านั้น
 import sys
 import tempfile
 from pathlib import Path
