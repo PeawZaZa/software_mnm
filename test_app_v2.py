@@ -830,3 +830,50 @@ class TestDef03CorruptRowDoesNotKillTheApp:
         }))
         service = InventoryService(repo)
         assert service.get_summary()[0] == 1
+
+
+# ══════════════════════════════════════════════════
+# UAT-DEF-01: ตัดสต๊อกแล้วไม่เตือนเมื่อถึง Reorder Point
+# พบจาก UAT-SC02-B (สัปดาห์ที่ 12) — เดิมเตือนเฉพาะเมื่อต่ำกว่า LOW_STOCK (10)
+# สินค้าขายเร็วที่ตั้ง reorder point สูงกว่า 10 จึงไม่เคยได้รับคำเตือนตอนขาย
+# ══════════════════════════════════════════════════
+
+class TestUatDef01ReorderAlertOnStockOut:
+
+    @pytest.fixture
+    def fast_mover(self, service):
+        service.add_update("P200", "Water", 40, 10.0, "Drink", "885000000200", 30)
+        return service
+
+    def test_alerts_when_reorder_point_above_low_stock_is_reached(self, fast_mover):
+        ok, msg = fast_mover.stock_out("P200", 12)  # 40 → 28 ≤ 30
+        assert ok is True
+        assert "REORDER POINT REACHED" in msg
+        assert "28" in msg and "30" in msg
+
+    def test_alerts_exactly_at_reorder_point(self, fast_mover):
+        ok, msg = fast_mover.stock_out("P200", 10)  # 40 → 30
+        assert "REORDER POINT REACHED" in msg
+
+    def test_no_reorder_alert_above_reorder_point(self, fast_mover):
+        ok, msg = fast_mover.stock_out("P200", 9)  # 40 → 31
+        assert ok is True
+        assert msg == "Stock updated."
+
+    def test_both_warnings_when_low_and_at_reorder_point(self, service):
+        service.add_update("P1", "Milk", 10, 20.0, "Dairy", "885123456789", 5)
+        ok, msg = service.stock_out("P1", 6)  # 10 → 4
+        assert "RUNNING VERY LOW" in msg
+        assert "REORDER POINT REACHED" in msg
+
+    def test_reorder_point_zero_never_triggers_reorder_alert(self, service):
+        ok, msg = service.stock_out("101", 45)  # default reorder_point = 0
+        assert "REORDER" not in msg
+
+    def test_cashier_sees_alert_on_screen(self, fast_mover):
+        outputs = []
+        keys = iter(["P200", "12"])
+        ui = ConsoleUI(fast_mover, input_fn=lambda p="": next(keys),
+                       print_fn=lambda *a: outputs.append(" ".join(map(str, a))))
+        ui.handle_out()
+        assert "REORDER POINT REACHED" in outputs[-1]
