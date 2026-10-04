@@ -45,7 +45,7 @@
 
 ## บทที่ 4 · Closure Readiness
 
-[Checklist 4 เสา](../week14/Closure_Readiness_Checklist.md) — ✅ 12 · ⚠️ 3 · ⬜ 8
+[Checklist 4 เสา](../week14/Closure_Readiness_Checklist.md) — ✅ 14 · ⚠️ 2 · ⬜ 7
 งานค้างทั้งหมดเป็นงานที่คนต้องทำ (ลงนาม · กดใน Jira/GitHub · Log Work) ไม่มีงานค้างด้านโค้ดหรือเอกสาร
 
 ## บทที่ 5 · Financial Settlement
