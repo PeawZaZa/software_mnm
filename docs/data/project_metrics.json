@@ -1,0 +1,176 @@
+{
+  "_readme": [
+    "ไฟล์นี้คือแหล่งข้อมูลเดียว (single source of truth) ของตัวเลขบริหารโครงการทั้งหมดตั้งแต่สัปดาห์ที่ 11",
+    "แก้ตัวเลขที่นี่แล้วรัน: python tools/pm_metrics.py  → ได้ตาราง EVM / Reserve / ROI / KPI และกราฟใหม่ทั้งหมด",
+    "ค่าที่มี status = 'assumed' คือค่าประมาณ ต้องแทนด้วยชั่วโมงจริงจาก Jira Log Work ก่อนส่งฉบับสุดท้าย",
+    "หลักการประมาณ AC (ตัดสินใจ 2026-10-05): ชั่วโมงตามแผน + กันชนที่เบิกจริง + งานทำซ้ำที่มีหลักฐานใน git เท่านั้น"
+  ],
+  "labor_rate_thb_per_hour": {
+    "value": 300,
+    "status": "assumed",
+    "source": "docs/EVM_Analysis.md (สัปดาห์ที่ 9–10) — ใช้ต่อเพื่อให้ตัวเลข EVM ต่อเนื่องกัน",
+    "note": "Phase2_Inventory_System_Report.md ใช้ 500 บาท/ชม. — ดูข้อสังเกตใน Procurement_Reconciliation.md"
+  },
+  "hours_per_issue": 4,
+  "contingency_reserve": {
+    "initial_hours": 12.0,
+    "source": "docs/Contingency_Reserve_Log.md — 10% ของแผน 120 ชม.",
+    "draws": [
+      {
+        "id": "CR-2026-001",
+        "date": "2026-09-07",
+        "sprint": "Sprint 2",
+        "hours": 2.5,
+        "item": "แก้ข้อบกพร่องจาก Bug Bashing DEF-01/02/03",
+        "approved_by": "CCB"
+      },
+      {
+        "id": "CR-2026-002",
+        "date": "2026-09-07",
+        "sprint": "Sprint 2",
+        "hours": 4.5,
+        "item": "พัฒนา CR-02 Export CSV",
+        "approved_by": "CCB"
+      },
+      {
+        "id": "CR-2026-003",
+        "date": "2026-10-05",
+        "sprint": "Sprint 3",
+        "hours": 1.5,
+        "item": "แก้ UAT-DEF-01 ตัดสต๊อกแล้วไม่เตือนเมื่อถึง Reorder Point",
+        "approved_by": "PM + Tech Lead (critical defect ระหว่าง Code Freeze)"
+      },
+      {
+        "id": "CR-2026-004",
+        "date": "2026-10-05",
+        "sprint": "Sprint 1",
+        "hours": 0.5,
+        "type": "overrun-settlement",
+        "item": "ชดเชยค่าแรงส่วนเกิน: งานทำซ้ำ PR #14 → #15 → #19 (บันทึกตอนกระทบยอดปิดเฟส)",
+        "approved_by": "PM (Final reconciliation)"
+      }
+    ]
+  },
+  "sprints": [
+    {
+      "name": "Sprint 1",
+      "goal": "Refactor & Bug Fixes (INV-4…INV-16)",
+      "planned_start": "2026-06-29",
+      "planned_end": "2026-07-13",
+      "actual_end": "2026-08-03",
+      "committed_issues": 16,
+      "added_issues": 0,
+      "completed_issues": 16,
+      "planned_hours": 64.0,
+      "reserve_hours": 0.0,
+      "actual_hours": {
+        "value": 64.5,
+        "status": "assumed",
+        "basis": "แผน 64 ชม. + งานทำซ้ำที่เห็นใน git: PR #14 → revert #15 → merge ใหม่ #19 ใช้เวลารวม ~32 นาที (≈ 0.5 ชม.)"
+      },
+      "completed_by_planned_end": 4,
+      "completed_by_planned_end_source": "Jira: SAM1-11/12/13/25 ปิดภายใน 2026-07-13 (docs/EVM_Analysis.md)"
+    },
+    {
+      "name": "Sprint 2",
+      "goal": "Class-Based Architecture + CR-01 + CR-02",
+      "planned_start": "2026-08-10",
+      "planned_end": "2026-09-07",
+      "actual_end": "2026-09-07",
+      "committed_issues": 14,
+      "added_issues": 5,
+      "added_detail": "SAM1-44 CR-01, SAM1-45 CR-02, SAM1-46/47/48 DEF-03/01/02",
+      "completed_issues": 19,
+      "planned_hours": 60.0,
+      "planned_hours_basis": "14 งานเดิม × 4 ชม. + CR-01 (SAM1-44) 4 ชม. — CR-02 และ DEF ใช้เงินกันชน",
+      "reserve_hours": 7.0,
+      "actual_hours": {
+        "value": 67.0,
+        "status": "assumed",
+        "basis": "แผน 60 ชม. + เบิกกันชน 7 ชม. ตามที่บันทึกไว้ใน Contingency_Reserve_Log.md (ไม่พบงานทำซ้ำใน git)"
+      },
+      "completed_by_planned_end": 19,
+      "completed_by_planned_end_source": "PR #23–#26 merge 2026-09-07 01:17–01:20 ตรงวันสิ้นสุดตามแผน"
+    },
+    {
+      "name": "Sprint 3",
+      "goal": "Hardening, UAT & Release v2.0.0-evolution",
+      "planned_start": "2026-09-08",
+      "planned_end": "2026-09-21",
+      "actual_end": "2026-10-05",
+      "committed_issues": 9,
+      "added_issues": 1,
+      "added_detail": "UAT-DEF-01 (พบระหว่าง UAT)",
+      "completed_issues": 10,
+      "planned_hours": 36.0,
+      "reserve_hours": 1.5,
+      "actual_hours": {
+        "value": 37.5,
+        "status": "assumed",
+        "basis": "แผน 36 ชม. + เบิกกันชน UAT-DEF-01 1.5 ชม. (ไม่พบงานทำซ้ำใน git)"
+      },
+      "completed_by_planned_end": 0,
+      "completed_by_planned_end_source": "ไม่มี commit ใดระหว่าง 2026-09-08 ถึง 2026-09-21 (git log)"
+    }
+  ],
+  "tools": [
+    {
+      "item": "Jira Software Cloud",
+      "baseline_thb": 0,
+      "actual_thb": 0,
+      "status": "Free plan (≤ 10 users) — ทีมมี 4 คน"
+    },
+    {
+      "item": "GitHub Repository",
+      "baseline_thb": 0,
+      "actual_thb": 0,
+      "status": "Public repository — ไม่มีค่าใช้จ่าย"
+    },
+    {
+      "item": "GitHub Actions",
+      "baseline_thb": 0,
+      "actual_thb": 0,
+      "status": "ใช้จริง 0 นาที — job ไม่ถูกรันเพราะบัญชีติดปัญหา billing (ดู W9–10 รายงาน)"
+    },
+    {
+      "item": "Python 3 + pytest / flake8 / bandit / pip-audit",
+      "baseline_thb": 0,
+      "actual_thb": 0,
+      "status": "Open source"
+    },
+    {
+      "item": "Cloud server / Database hosting",
+      "baseline_thb": 0,
+      "actual_thb": 0,
+      "status": "ไม่ได้ใช้ — โปรแกรมเป็น CLI ทำงานบนเครื่องผู้ใช้ เก็บข้อมูลเป็นไฟล์ JSON"
+    }
+  ],
+  "roi": {
+    "horizon_months": 12,
+    "benefits": [
+      {
+        "id": "B1",
+        "name": "ลดเวลาแก้บั๊ก/ดูแลระบบ",
+        "hours_before_per_month": 6.0,
+        "hours_after_per_month": 2.0,
+        "status": "assumed",
+        "basis": "v1.0 มีจุดเสี่ยง 9 จุด + ไม่มีเทสต์; v2.0 มีเทสต์ 176 เคส coverage 99% ใน CI"
+      },
+      {
+        "id": "B2",
+        "name": "ลดเวลาทำรายงานสั่งซื้อด้วย CSV Export (CR-02)",
+        "minutes_saved_per_run": 19,
+        "runs_per_month": 2,
+        "status": "measured-estimate",
+        "basis": "CR-02_Impact_and_Decision_Form.md: คัดลอกมือ ~20 นาที/ครั้ง → < 1 นาที, เดือนละ 1–2 ครั้ง"
+      },
+      {
+        "id": "B3",
+        "name": "ลดยอดขายตกหล่นจากของขาดสต๊อก (CR-01 Reorder Point)",
+        "thb_per_month": 500,
+        "status": "assumed",
+        "basis": "สมมติร้านขนาดเล็กขาดสต๊อก 1 ครั้ง/เดือน กำไรที่เสีย ~500 บาท ระบบเตือนก่อนของหมด"
+      }
+    ]
+  }
+}

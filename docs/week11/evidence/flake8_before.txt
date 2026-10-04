@@ -1,0 +1,11 @@
+# flake8 ก่อนแก้ (develop @ 1a5c024, ค่า default ของ flake8, ไม่รวม app_v1.py)
+.\app_v2.py
+.\test_app.py
+.\test_app_v2.py
+1     E231 missing whitespace after ','
+119   E261 at least two spaces before inline comment
+1     E272 multiple spaces before keyword
+6     E302 expected 2 blank lines, found 1
+142   E501 line too long (89 > 79 characters)
+1     W292 no newline at end of file
+270

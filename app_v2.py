@@ -1,131 +1,385 @@
+import csv
 import json
 import os
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
 
-# global variables
+# path ของไฟล์ข้อมูล — ค่าคงที่ระดับโมดูล (ไม่ใช่ global state ที่ถูกแก้ระหว่างรัน)
+# test ใช้ monkeypatch เปลี่ยนค่านี้ได้ เพราะทุกคลาสอ่านค่าตอนสร้าง instance
 db = "data.json"
-LOW_STOCK = 10 # แก้ไข: เพิ่มตัวแปรคงที่สำหรับกำหนดเกณฑ์สต๊อกต่ำ (ใช้ร่วมกันทั้งเมนู 3 และเมนู 4 เพื่อแก้ INV-9)
+
+SAVE_FAILED_MESSAGE = "Error: could not save data to disk. No changes were made."
+
+
+@dataclass
+class Product:
+    """[SAM1-28] สินค้า 1 รายการ — แทนที่ dict {"n","q","p","c"} แบบเดิม"""
+
+    id: str
+    name: str
+    qty: int
+    price: float
+    category: str
+    barcode: str = ""       # [CR-01] รหัสบาร์โค้ด — ว่างได้ สินค้าเดิมยังไม่มี
+    reorder_point: int = 0  # [CR-01] จุดสั่งซื้อซ้ำ เกณฑ์รายชิ้น
+
+    def to_dict(self):
+        """คืนรูปแบบ key ย่อเดิม เพื่อให้ data.json ที่มีอยู่ยังใช้ได้ ไม่ต้อง migrate"""
+        return {
+            "n": self.name, "q": self.qty, "p": self.price, "c": self.category,
+            "b": self.barcode, "r": self.reorder_point,  # [CR-01]
+        }
+
+    @property
+    def stock_value(self):
+        """[W11 Feature Envy] มูลค่าคงคลังของสินค้าชิ้นนี้ — คำนวณที่เจ้าของข้อมูล"""
+        return self.qty * self.price
+
+    def needs_reorder(self):
+        """[W11 Feature Envy] ถึงจุดสั่งซื้อซ้ำหรือยัง (reorder_point = 0 คือไม่ได้ตั้งค่า)"""
+        return self.reorder_point > 0 and self.qty <= self.reorder_point
+
+    @classmethod
+    def from_dict(cls, product_id, data):
+        """
+        สร้าง Product จาก dict รูปแบบเดิม
+        key ที่ขาดใช้ค่า default (กัน KeyError จาก legacy data ที่ไม่ครบ)
+        แต่ค่าที่แปลงชนิดไม่ได้จะปล่อย ValueError ให้ชั้นบนจัดการ
+        """
+        return cls(
+            id=str(product_id),
+            name=str(data.get("n", "")),
+            qty=int(data.get("q", 0)),
+            price=float(data.get("p", 0.0)),
+            category=str(data.get("c", "")),
+            # [CR-01] key b/r ไม่มีใน data.json เดิม จึงต้องมีค่า default
+            barcode=str(data.get("b", "")),
+            reorder_point=int(data.get("r", 0)),
+        )
+
+
+class InventoryRepository:
+    """[SAM1-31] รับผิดชอบการอ่าน/เขียน data.json เพียงอย่างเดียว"""
+
+    # ย้าย default data มาไว้ที่เดียว (เดิมเขียนซ้ำ 2 ที่ใน load())
+    DEFAULT_DATA = {
+        "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"},
+        "102": {"n": "Lactasoy Milk", "q": 20, "p": 12.0, "c": "Drink"},
+        "103": {"n": "Singha Water", "q": 100, "p": 10.0, "c": "Drink"}
+    }
+
+    def __init__(self, path=None):
+        # อ่านค่า db ตอนถูกเรียก ไม่ใช่ตอนนิยามคลาส เพื่อให้ monkeypatch ใน test ทำงานได้
+        self.path = Path(path if path is not None else db)
+
+    def load(self):
+        """โหลดข้อมูลเป็น dict[str, Product] หากไฟล์เสียหรือไม่มีจะใช้ค่าเริ่มต้น"""
+        if self.path.exists():
+            # [INV-10] ถ้าไฟล์เสียหรืออ่านไม่ได้ ให้โหลด default แทน
+            # [W11] ระบุ exception ให้เจาะจง แทน except Exception ครอบจักรวาล
+            try:
+                raw = json.loads(self.path.read_text(encoding="utf-8"))
+                if not isinstance(raw, dict):
+                    raise ValueError("top-level JSON must be an object")
+            except (OSError, UnicodeDecodeError, ValueError):
+                # json.JSONDecodeError เป็น subclass ของ ValueError
+                print("Warning: Database file is corrupted. Loading default data.")
+                raw = self.DEFAULT_DATA
+        else:
+            raw = self.DEFAULT_DATA
+        inventory = {}
+        for pid, item in raw.items():
+            try:
+                inventory[pid] = Product.from_dict(pid, item)
+            except (ValueError, TypeError, AttributeError):
+                # [#22] ข้อมูลเสียแถวเดียวต้องไม่ทำให้เปิดโปรแกรมไม่ได้ทั้งระบบ
+                print(f"Warning: skipping corrupted row '{pid}' in {self.path.name}.")
+        return inventory
+
+    def save(self, inventory):
+        """
+        [INV-11] Atomic write: เขียนลงไฟล์ชั่วคราวให้เสร็จก่อน แล้วสลับด้วย os.replace()
+        ผลคือไฟล์จริงจะเป็นข้อมูลใหม่ทั้งหมด หรือข้อมูลเดิมทั้งหมด ไม่มีสภาพครึ่ง ๆ กลาง ๆ
+
+        [W11] คืนค่า True/False แทนการกลืน error เงียบ ๆ เพื่อให้ชั้น service รู้ว่าบันทึกไม่สำเร็จ
+        """
+        payload = {pid: product.to_dict() for pid, product in inventory.items()}
+        directory = self.path.parent
+        temp_name = None
+        try:
+            # ไฟล์ชั่วคราวต้องอยู่โฟลเดอร์เดียวกับไฟล์จริง os.replace() จึงเป็น atomic
+            fd, temp_name = tempfile.mkstemp(
+                prefix=self.path.name + ".", suffix=".tmp", dir=directory
+            )
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())  # ให้ข้อมูลลงดิสก์จริงก่อนสลับไฟล์
+            os.replace(temp_name, self.path)
+            return True
+        except OSError as e:
+            print(f"Error saving data: {e}")
+            if temp_name and os.path.exists(temp_name):
+                os.remove(temp_name)  # ไม่ทิ้งไฟล์ .tmp ค้างไว้
+            return False
+
+
+class InventoryService:
+    """[SAM1-34] business logic ทั้งหมด — ไม่ยุ่งกับ input/print และไม่ยุ่งกับไฟล์โดยตรง"""
+
+    LOW_STOCK = 10  # [INV-9] เกณฑ์เดียวใช้ร่วมกันทั้งเมนู 3 และเมนู 4
+
+    def __init__(self, repository):
+        self.repository = repository
+        self.inventory = repository.load()
+
+    def validate(self, qty, price, reorder_point=0):
+        """ตรวจค่าก่อนบันทึก คืน (ok, error_message)"""
+        if qty < 0:
+            return False, "Invalid input: Qty must not be negative."
+        if price < 0:
+            return False, "Invalid input: Price must not be negative."
+        # [#21] จุดสั่งซื้อซ้ำติดลบไม่มีความหมาย และเคยถูกบันทึกแล้วละเลยเงียบๆ
+        if reorder_point < 0:
+            return False, "Invalid input: Reorder Point must not be negative."
+        return True, ""
+
+    def _products_with_barcode(self, barcode):
+        """[W11 Duplicate Code] จุดเดียวที่วนหาสินค้าจากบาร์โค้ด (บาร์โค้ดว่างไม่นับว่าตรงกัน)"""
+        if not barcode:
+            return []
+        return [p for p in self.inventory.values() if p.barcode == barcode]
+
+    def _barcode_owner(self, barcode, exclude_id):
+        """[#20] คืน id ของสินค้าตัวอื่นที่ใช้บาร์โค้ดนี้อยู่"""
+        for product in self._products_with_barcode(barcode):
+            if product.id != exclude_id:
+                return product.id
+        return None
+
+    def add_update(self, product_id, name, qty, price, category,
+                   barcode="", reorder_point=0):
+        """[INV-8] เพิ่มหรือแก้ไขสินค้า — เขียนทับเสมอ ไม่บวกสะสม"""
+        ok, message = self.validate(qty, price, reorder_point)
+        if not ok:
+            return False, message
+        # [#20] กันสินค้าคนละตัวใช้บาร์โค้ดเดียวกัน จนค้นหาแล้วเจอผิดตัว
+        owner = self._barcode_owner(barcode, product_id)
+        if owner is not None:
+            return False, f"Error: Barcode {barcode} is already used by product {owner}."
+        previous = self.inventory.get(product_id)
+        self.inventory[product_id] = Product(
+            product_id, name, qty, price, category, barcode, reorder_point
+        )
+        if not self.repository.save(self.inventory):
+            # [W11] บันทึกไม่สำเร็จ → ย้อนข้อมูลในหน่วยความจำ ให้ตรงกับไฟล์บนดิสก์
+            if previous is None:
+                del self.inventory[product_id]
+            else:
+                self.inventory[product_id] = previous
+            return False, SAVE_FAILED_MESSAGE
+        return True, "Done."
+
+    def stock_out(self, product_id, amt):
+        """ตัดสต๊อกออก คืน (success, message)"""
+        product = self.inventory.get(product_id)
+        if product is None:
+            return False, "Product not found!"
+        # [INV-7] ปฏิเสธจำนวนที่เป็นลบหรือศูนย์ ก่อนเทียบกับสต๊อกที่มี
+        if amt <= 0:
+            return False, "Error: Amount must be greater than zero!"
+        if product.qty < amt:
+            return False, "Error: Not enough stock!"
+
+        product.qty -= amt
+        if not self.repository.save(self.inventory):
+            product.qty += amt  # [W11] ย้อนกลับ เพราะไฟล์บนดิสก์ยังเป็นค่าเดิม
+            return False, SAVE_FAILED_MESSAGE
+        message = "Stock updated."
+        if product.qty < self.LOW_STOCK:
+            message += " !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!"
+        # [UAT-DEF-01] เดิมเตือนแค่เกณฑ์รวม LOW_STOCK สินค้าขายเร็วที่ตั้ง reorder point
+        # สูงกว่า 10 จึงไม่เคยถูกเตือนตอนขาย ต้องเตือนตามเกณฑ์รายชิ้นด้วย
+        if product.needs_reorder():
+            message += (f" !!! REORDER POINT REACHED: {product.qty} left "
+                        f"(reorder point {product.reorder_point}) !!!")
+        return True, message
+
+    def find_by_barcode(self, barcode):
+        """[CR-01] ค้นสินค้าจากบาร์โค้ด คืน None ถ้าไม่เจอ"""
+        matches = self._products_with_barcode(barcode)
+        return matches[0] if matches else None
+
+    def get_reorder_list(self):
+        """[CR-01] สินค้าที่ถึงจุดสั่งซื้อซ้ำแล้ว (qty <= reorder_point ของชิ้นนั้น)"""
+        return [p for p in self.inventory.values() if p.needs_reorder()]
+
+    def get_summary(self):
+        """คืน (จำนวนชนิดสินค้า, มูลค่ารวม, รายชื่อสินค้าที่สต๊อกต่ำ)"""
+        total_items = len(self.inventory)
+        total_val = sum(p.stock_value for p in self.inventory.values())
+        low_stock_list = [p.name for p in self.inventory.values() if p.qty < self.LOW_STOCK]
+        return total_items, float(total_val), low_stock_list
+
+
+class CsvReportExporter:
+    """[CR-02] ส่งออกรายงานสต๊อกเป็นไฟล์ CSV"""
+
+    HEADERS = ["id", "name", "qty", "price", "category", "barcode", "reorder_point"]
+
+    def export(self, inventory, path):
+        """เขียน inventory ลงไฟล์ CSV คืนจำนวนแถวข้อมูล (ไม่นับ header)"""
+        # newline="" กัน Windows แทรกบรรทัดว่างคั่นทุกแถว
+        # utf-8-sig ใส่ BOM ให้ Excel อ่านภาษาไทยได้ถูกต้อง
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.writer(f)
+            writer.writerow(self.HEADERS)
+            for product in inventory.values():
+                writer.writerow([
+                    product.id, product.name, product.qty, product.price,
+                    product.category, product.barcode, product.reorder_point,
+                ])
+        return len(inventory)
+
+
+class ConsoleUI:
+    """[SAM1-37] ชั้นติดต่อผู้ใช้ — รับ input, พิมพ์ผล และ route ไปยัง service เท่านั้น"""
+
+    def __init__(self, service, input_fn=input, print_fn=print, exporter=None):
+        # inject input/print เพื่อให้เขียน unit test ได้โดยไม่ต้อง monkeypatch builtins
+        self.service = service
+        self.input = input_fn
+        self.print = print_fn
+        self.exporter = exporter if exporter is not None else CsvReportExporter()
+
+    EXIT_CHOICE = "5"
+
+    def menu(self):
+        """
+        [W11] ตารางเมนู เลข → (ชื่อ, handler) แทน if/elif 8 ชั้น
+        ลด Cyclomatic Complexity ของ run() จาก 9 เหลือ 5
+        """
+        return {
+            "1": ("Show all", self.handle_show),
+            "2": ("Add or Update", self.handle_add),
+            "3": ("Out", self.handle_out),
+            "4": ("Inventory Summary", self.handle_summary),  # [INV-12] เดิมชื่อ Check Check
+            self.EXIT_CHOICE: ("Exit", None),
+            "6": ("Reorder List", self.handle_reorder),  # [CR-01]
+            "7": ("Export CSV", self.handle_export),  # [CR-02]
+        }
+
+    def run(self):
+        menu = self.menu()
+        while True:
+            self.print("")
+            self.print("=== INVENTORY SYSTEM v2.0 ===")
+            for key, (label, _) in menu.items():
+                self.print(f"{key}. {label}")
+            choice = self.input("Select menu: ")
+
+            if choice == self.EXIT_CHOICE:
+                self.print("Bye")
+                break
+            if choice in menu:
+                menu[choice][1]()
+            else:
+                self.print("Invalid choice, try again.")
+
+    def handle_show(self):
+        self.print("-" * 50)
+        for product in self.service.inventory.values():
+            self.print(
+                f"ID: {product.id} | Name: {product.name} | Stock: {product.qty} "
+                f"| Price: {product.price} THB | Type: {product.category}"
+            )
+        self.print("-" * 50)
+
+    def handle_add(self):
+        product_id = self.input("Enter ID: ")
+        name = self.input("Enter Name: ")
+        try:  # [INV-6] ดักผู้ใช้พิมพ์ตัวอักษรในช่องตัวเลข
+            qty = int(self.input("Enter Qty: "))
+            price = float(self.input("Enter Price: "))
+        except ValueError:
+            self.print("Invalid input: Qty and Price must be numbers.")
+            return
+        category = self.input("Enter Category: ")
+        barcode = self.input("Enter Barcode (leave blank if none): ")  # [CR-01]
+        try:
+            reorder_point = int(self.input("Enter Reorder Point: "))
+        except ValueError:
+            self.print("Invalid input: Reorder Point must be a number.")
+            return
+        _, message = self.service.add_update(
+            product_id, name, qty, price, category, barcode, reorder_point
+        )
+        self.print(message)
+
+    def handle_out(self):
+        product_id = self.input("Enter product ID to cut stock: ")
+        try:  # [INV-6] ดักการรับค่าตัวอักษร
+            amt = int(self.input("How many items out?: "))
+        except ValueError:
+            self.print("Invalid input: Amount must be a number.")
+            return
+        _, message = self.service.stock_out(product_id, amt)
+        self.print(message)
+
+    def handle_reorder(self):
+        """[CR-01] แสดงรายการสินค้าที่ถึงจุดสั่งซื้อซ้ำ"""
+        reorder_list = self.service.get_reorder_list()
+        if not reorder_list:
+            self.print("No product has reached its reorder point.")
+            return
+        self.print("-" * 50)
+        for product in reorder_list:
+            self.print(
+                f"ID: {product.id} | Name: {product.name} "
+                f"| Stock: {product.qty} | Reorder Point: {product.reorder_point}"
+            )
+        self.print("-" * 50)
+
+    def handle_export(self):
+        """[CR-02] ส่งออกรายงานเป็น CSV"""
+        path = self.input("Enter output CSV path: ")
+        try:
+            rows = self.exporter.export(self.service.inventory, path)
+        except OSError as e:
+            self.print(f"Error: cannot write CSV file: {e}")
+            return
+        self.print(f"Exported {rows} products to {path}")
+
+    def handle_summary(self):
+        total_items, total_val, low_stock_list = self.service.get_summary()
+        self.print(f"Total product types: {total_items}")
+        self.print(f"Total inventory value: {total_val} THB")
+        self.print(f"Alert low stock (<{self.service.LOW_STOCK}): {', '.join(low_stock_list)}")
+
+
+# ── Backward-compatible wrappers ──
+# test_app.py (regression suite ของ Sprint 1) ยังเรียก API ระดับโมดูลอยู่
+# จึงคง signature เดิมไว้ แล้ว delegate ให้ InventoryRepository
+
+LOW_STOCK = InventoryService.LOW_STOCK  # alias ให้โค้ด/เทสต์เดิมที่อ้าง app_v2.LOW_STOCK
+
 
 def load(inventory):
-    """โหลดข้อมูลจากไฟล์ JSON หากไฟล์เสียหรือไม่มีจะโหลดค่าเริ่มต้น"""
-    if os.path.exists(db):
-        try: # [INV-10] เพิ่ม try/except สำหรับอ่านไฟล์
-            with open(db, 'r') as f:
-                inventory.update(json.load(f))
-        except Exception: # [INV-10] ถ้าไฟล์เสียหรืออ่านไม่ได้ ให้โหลด default แทน
-            print("Warning: Database file is corrupted. Loading default data.")
-            default_data = {
-                "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"},
-                "102": {"n": "Lactasoy Milk", "q": 20, "p": 12.0, "c": "Drink"},
-                "103": {"n": "Singha Water", "q": 100, "p": 10.0, "c": "Drink"}
-            }
-            inventory.update(default_data)
-    else:
-        # default data if file not found
-        default_data = {
-            "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food"},
-            "102": {"n": "Lactasoy Milk", "q": 20, "p": 12.0, "c": "Drink"},
-            "103": {"n": "Singha Water", "q": 100, "p": 10.0, "c": "Drink"}
-        }
-        inventory.update(default_data)
+    """โหลดข้อมูลเข้า dict รูปแบบเดิม (key ย่อ n/q/p/c)"""
+    loaded = InventoryRepository(db).load()
+    inventory.update({pid: product.to_dict() for pid, product in loaded.items()})
+
 
 def save(inventory):
-    """[INV-11] ทำ Atomic write ผ่าน tmp file เพื่อป้องกันไฟล์เสียระหว่างเซฟ"""
-    temp_db = db + ".tmp"
-    try:
-        with open(temp_db, 'w') as f:
-            json.dump(inventory, f)
-        os.replace(temp_db, db) # [INV-11] replace ไฟล์ต้นฉบับเมื่อเขียนเสร็จสมบูรณ์
-    except Exception as e:
-        print(f"Error saving data: {e}")
+    """บันทึก dict รูปแบบเดิมลงไฟล์"""
+    products = {pid: Product.from_dict(pid, item) for pid, item in inventory.items()}
+    InventoryRepository(db).save(products)
+
 
 def main():
-    inventory = {} # ประกาศตัวแปรรับข้อมูลแทนการใช้ global x
-    load(inventory)
-    
-    while True:
-        print("\n=== INVENTORY SYSTEM v1.0 ===")
-        print("1. Show all")
-        print("2. Add or Update")
-        print("3. Out")
-        print("4. Inventory Summary") # [INV-12] เปลี่ยนชื่อจาก Check Check เป็น Inventory Summary
-        print("5. Exit")
-        choice = input("Select menu: ")
-        
-        if choice == "1":
-            print("-" * 50)
-            for k in inventory:
-                print(f"ID: {k} | Name: {inventory[k]['n']} | Stock: {inventory[k]['q']} | Price: {inventory[k]['p']} THB | Type: {inventory[k]['c']}")
-            print("-" * 50)
-            
-        elif choice == "2":
-            a = input("Enter ID: ")
-            b = input("Enter Name: ")
-            
-            # [INV-6] เพิ่ม try/except ดักผู้ใช้พิมพ์ผิด & [INV-5] ใช้ตัวแปร qty แทน c
-            try:
-                qty = int(input("Enter Qty: ")) 
-                d = float(input("Enter Price: "))
-            except ValueError:
-                print("Invalid input: Qty and Price must be numbers.")
-                continue
-                
-            e = input("Enter Category: ")
-            
-            # This logic updates or creates
-            # แก้ไข: ลบ if/else ที่ทำงานเหมือนกันทิ้ง (INV-8) และเขียนทับ/สร้างใหม่ไปเลย
-            inventory[a] = {"n": b, "q": qty, "p": d, "c": e}
-            save(inventory)
-            print("Done.")
-            
-        elif choice == "3":
-            # Cut stock
-            id_to_cut = input("Enter product ID to cut stock: ")
-            if id_to_cut in inventory:
-                # [INV-6] ดักการรับค่าตัวอักษร
-                try:
-                    amt = int(input("How many items out?: "))
-                except ValueError:
-                    print("Invalid input: Amount must be a number.")
-                    continue
-                
-                # fix(menu3): reject negative and zero amount input [INV-7]
-                if amt <= 0:
-                    print("Error: Amount must be greater than zero!")
-                    continue
-                    
-                if inventory[id_to_cut]['q'] >= amt:
-                    inventory[id_to_cut]['q'] -= amt
-                    save(inventory)
-                    print("Stock updated.")
-                    # Check if running low
-                    if inventory[id_to_cut]['q'] < LOW_STOCK: # แก้ไข: ใช้ค่าคงที่ LOW_STOCK แทนตัวเลข 5 (แก้ INV-9: เกณฑ์ไม่ตรงกันระหว่างเมนู 3 และเมนู 4)
-                        print("!!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!")
-                else:
-                    print("Error: Not enough stock!")
-            else:
-                print("Product not found!")
-                
-        elif choice == "4":
-            # Calculate total value and show some alert
-            total_items = 0
-            total_val = 0.0
-            low_stock_list = []
-            
-            for k in inventory:
-                total_items += 1
-                total_val += inventory[k]['q'] * inventory[k]['p']
-                if inventory[k]['q'] < LOW_STOCK: # แก้ไข: ใช้ค่าคงที่ LOW_STOCK แทนตัวเลข 10
-                    low_stock_list.append(inventory[k]['n'])
-                    
-            print(f"Total product types: {total_items}")
-            print(f"Total inventory value: {total_val} THB")
-            print(f"Alert low stock (<{LOW_STOCK}): {', '.join(low_stock_list)}") # แก้ไข: ดึงค่า LOW_STOCK มาแสดงในข้อความแจ้งเตือน
-            
-        elif choice == "5":
-            print("Bye")
-            break
-        else:
-            print("Invalid choice, try again.")
+    ConsoleUI(InventoryService(InventoryRepository(db))).run()
+
 
 if __name__ == "__main__":
     main()

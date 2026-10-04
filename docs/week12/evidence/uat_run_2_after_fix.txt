@@ -1,0 +1,93 @@
+
+======================================================================
+UAT-SC01 · Inventory Manager · PASS
+Action  : รับสินค้าเข้า: Milk (P100) บาร์โค้ด 885123456789 สต๊อก 10 Reorder Point 5
+Expected: บันทึกสำเร็จ ไม่ crash และเห็นสินค้าในเมนู 1
+--- screen ---
+Select menu: Enter ID: Enter Name: Enter Qty: Enter Price: Enter Category: Enter Barcode (leave blank if none): Enter Reorder Point: Done.
+Select menu: --------------------------------------------------
+ID: 101 | Name: Mama Noodles | Stock: 50 | Price: 6.0 THB | Type: Food
+ID: 102 | Name: Lactasoy Milk | Stock: 20 | Price: 12.0 THB | Type: Drink
+ID: 103 | Name: Singha Water | Stock: 100 | Price: 10.0 THB | Type: Drink
+ID: P100 | Name: Milk | Stock: 10 | Price: 20.0 THB | Type: Dairy
+--------------------------------------------------
+Select menu: Bye
+
+======================================================================
+UAT-SC02 · Store Cashier · PASS
+Action  : ขาย Milk ออก 6 ชิ้น (เหลือ 4 ≤ Reorder Point 5)
+Expected: ขึ้นข้อความเตือนทันทีหลังตัดสต๊อก
+--- screen ---
+Select menu: Enter product ID to cut stock: How many items out?: Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!! !!! REORDER POINT REACHED: 4 left (reorder point 5) !!!
+Select menu: Bye
+
+======================================================================
+UAT-SC02-B · Store Cashier · PASS
+Action  : สินค้าขายเร็ว: Water (P200) สต๊อก 40 Reorder Point 30 → ขายออก 12 (เหลือ 28 ≤ 30)
+Expected: ขึ้นข้อความเตือนว่าถึงจุดสั่งซื้อทันทีหลังตัดสต๊อก
+--- screen ---
+Select menu: Enter ID: Enter Name: Enter Qty: Enter Price: Enter Category: Enter Barcode (leave blank if none): Enter Reorder Point: Done.
+Select menu: Enter product ID to cut stock: How many items out?: Stock updated. !!! REORDER POINT REACHED: 28 left (reorder point 30) !!!
+Select menu: Bye
+
+======================================================================
+UAT-SC03 · Purchasing Officer · PASS
+Action  : เมนู 7 Export CSV แล้วเปิดไฟล์ตรวจ
+Expected: ไฟล์มีคอลัมน์ barcode / reorder_point และข้อมูล Milk ถูกต้อง เปิดใน Excel ได้ (มี BOM)
+--- screen ---
+Select menu: Enter output CSV path: Exported 5 products to C:\Users\nicky\AppData\Local\Temp\tmpmbqkaw7m\uat_report.csv
+Select menu: Bye
+
+======================================================================
+UAT-SC04 · Store Owner · PASS
+Action  : เมนู 4 Inventory Summary — ยืนยันฟังก์ชันเดิมยังคำนวณถูก
+Expected: มูลค่ารวม = 1,540 (default) + Milk 4×20 + Water 28×10 = 1,900 บาท
+--- screen ---
+Select menu: Total product types: 5
+Total inventory value: 1900.0 THB
+Alert low stock (<10): Milk
+Select menu: Bye
+
+======================================================================
+UAT-EC01 · กรรมการ (edge case) · PASS
+Action  : ตัดสต๊อกเกินจำนวนที่มี: Milk ขอออก 999
+Expected: ปฏิเสธพร้อมข้อความ ไม่ crash สต๊อกไม่เปลี่ยน
+--- screen ---
+Select menu: Enter product ID to cut stock: How many items out?: Error: Not enough stock!
+Select menu: --------------------------------------------------
+ID: 101 | Name: Mama Noodles | Stock: 50 | Price: 6.0 THB | Type: Food
+ID: 102 | Name: Lactasoy Milk | Stock: 20 | Price: 12.0 THB | Type: Drink
+ID: 103 | Name: Singha Water | Stock: 100 | Price: 10.0 THB | Type: Drink
+ID: P100 | Name: Milk | Stock: 4 | Price: 20.0 THB | Type: Dairy
+ID: P200 | Name: Water | Stock: 28 | Price: 10.0 THB | Type: Drink
+--------------------------------------------------
+Select menu: Bye
+
+======================================================================
+UAT-EC02 · กรรมการ (edge case) · PASS
+Action  : กรอกราคาเป็น 'abc' และราคาติดลบ
+Expected: ปฏิเสธทั้งสองกรณี ไม่ crash
+--- screen ---
+Select menu: Enter ID: Enter Name: Enter Qty: Enter Price: Invalid input: Qty and Price must be numbers.
+Select menu: Enter ID: Enter Name: Enter Qty: Enter Price: Enter Category: Enter Barcode (leave blank if none): Enter Reorder Point: Invalid input: Price must not be negative.
+Select menu: Bye
+
+======================================================================
+UAT-EC03 · กรรมการ (edge case) · PASS
+Action  : Export CSV ซ้ำสองรอบติดกันไปที่ไฟล์เดิม
+Expected: ไฟล์ถูกเขียนทับสมบูรณ์ ไม่มีแถวซ้ำ ไม่เสียหาย
+--- screen ---
+Select menu: Enter output CSV path: Exported 5 products to C:\Users\nicky\AppData\Local\Temp\tmpmbqkaw7m\uat_report.csv
+Select menu: Enter output CSV path: Exported 5 products to C:\Users\nicky\AppData\Local\Temp\tmpmbqkaw7m\uat_report.csv
+Select menu: Bye
+
+======================================================================
+UAT after-fix (fix/uat-def-01-reorder-alert + UAT-DEF-01 fix): 8/8 passed
+  PASS  UAT-SC01
+  PASS  UAT-SC02
+  PASS  UAT-SC02-B
+  PASS  UAT-SC03
+  PASS  UAT-SC04
+  PASS  UAT-EC01
+  PASS  UAT-EC02
+  PASS  UAT-EC03
