@@ -196,9 +196,15 @@ class InventoryService:
         if not self.repository.save(self.inventory):
             product.qty += amt  # [W11] ย้อนกลับ เพราะไฟล์บนดิสก์ยังเป็นค่าเดิม
             return False, SAVE_FAILED_MESSAGE
+        message = "Stock updated."
         if product.qty < self.LOW_STOCK:
-            return True, "Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!"
-        return True, "Stock updated."
+            message += " !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!"
+        # [UAT-DEF-01] เดิมเตือนแค่เกณฑ์รวม LOW_STOCK สินค้าขายเร็วที่ตั้ง reorder point
+        # สูงกว่า 10 จึงไม่เคยถูกเตือนตอนขาย ต้องเตือนตามเกณฑ์รายชิ้นด้วย
+        if product.needs_reorder():
+            message += (f" !!! REORDER POINT REACHED: {product.qty} left "
+                        f"(reorder point {product.reorder_point}) !!!")
+        return True, message
 
     def find_by_barcode(self, barcode):
         """[CR-01] ค้นสินค้าจากบาร์โค้ด คืน None ถ้าไม่เจอ"""

@@ -1,0 +1,59 @@
+FF.F.F                                                                   [100%]
+================================== FAILURES ===================================
+_ TestUatDef01ReorderAlertOnStockOut.test_alerts_when_reorder_point_above_low_stock_is_reached _
+
+self = <test_app_v2.TestUatDef01ReorderAlertOnStockOut object at 0x000001F50C46B250>
+fast_mover = <app_v2.InventoryService object at 0x000001F50C428590>
+
+    def test_alerts_when_reorder_point_above_low_stock_is_reached(self, fast_mover):
+        ok, msg = fast_mover.stock_out("P200", 12)  # 40 \u2192 28 \u2264 30
+        assert ok is True
+>       assert "REORDER POINT REACHED" in msg
+E       AssertionError: assert 'REORDER POINT REACHED' in 'Stock updated.'
+
+test_app_v2.py:851: AssertionError
+___ TestUatDef01ReorderAlertOnStockOut.test_alerts_exactly_at_reorder_point ___
+
+self = <test_app_v2.TestUatDef01ReorderAlertOnStockOut object at 0x000001F50C46B390>
+fast_mover = <app_v2.InventoryService object at 0x000001F50C46BB10>
+
+    def test_alerts_exactly_at_reorder_point(self, fast_mover):
+        ok, msg = fast_mover.stock_out("P200", 10)  # 40 \u2192 30
+>       assert "REORDER POINT REACHED" in msg
+E       AssertionError: assert 'REORDER POINT REACHED' in 'Stock updated.'
+
+test_app_v2.py:856: AssertionError
+_ TestUatDef01ReorderAlertOnStockOut.test_both_warnings_when_low_and_at_reorder_point _
+
+self = <test_app_v2.TestUatDef01ReorderAlertOnStockOut object at 0x000001F50C4C7A80>
+service = <app_v2.InventoryService object at 0x000001F50C418640>
+
+    def test_both_warnings_when_low_and_at_reorder_point(self, service):
+        service.add_update("P1", "Milk", 10, 20.0, "Dairy", "885123456789", 5)
+        ok, msg = service.stock_out("P1", 6)  # 10 \u2192 4
+        assert "RUNNING VERY LOW" in msg
+>       assert "REORDER POINT REACHED" in msg
+E       AssertionError: assert 'REORDER POINT REACHED' in 'Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!'
+
+test_app_v2.py:867: AssertionError
+____ TestUatDef01ReorderAlertOnStockOut.test_cashier_sees_alert_on_screen _____
+
+self = <test_app_v2.TestUatDef01ReorderAlertOnStockOut object at 0x000001F50C44CD10>
+fast_mover = <app_v2.InventoryService object at 0x000001F50C4AAC30>
+
+    def test_cashier_sees_alert_on_screen(self, fast_mover):
+        outputs = []
+        keys = iter(["P200", "12"])
+        ui = ConsoleUI(fast_mover, input_fn=lambda p="": next(keys),
+                       print_fn=lambda *a: outputs.append(" ".join(map(str, a))))
+        ui.handle_out()
+>       assert "REORDER POINT REACHED" in outputs[-1]
+E       AssertionError: assert 'REORDER POINT REACHED' in 'Stock updated.'
+
+test_app_v2.py:879: AssertionError
+=========================== short test summary info ===========================
+FAILED test_app_v2.py::TestUatDef01ReorderAlertOnStockOut::test_alerts_when_reorder_point_above_low_stock_is_reached
+FAILED test_app_v2.py::TestUatDef01ReorderAlertOnStockOut::test_alerts_exactly_at_reorder_point
+FAILED test_app_v2.py::TestUatDef01ReorderAlertOnStockOut::test_both_warnings_when_low_and_at_reorder_point
+FAILED test_app_v2.py::TestUatDef01ReorderAlertOnStockOut::test_cashier_sees_alert_on_screen
+4 failed, 2 passed, 111 deselected in 0.27s
