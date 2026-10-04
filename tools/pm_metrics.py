@@ -52,7 +52,9 @@ def evm_rows(metrics):
         delay = (date.fromisoformat(s["actual_end"]) - date.fromisoformat(s["planned_end"])).days
         rows.append({"name": s["name"], "pv": pv, "ev": ev, "ac": ac, "delay_days": delay,
                      "scope": scope, "done": s["completed_issues"],
-                     "committed": s["committed_issues"]})
+                     "committed": s["committed_issues"],
+                     "ev_at_planned_end": pv * s["completed_by_planned_end"] / scope,
+                     "planned_end": s["planned_end"]})
     total = {k: sum(r[k] for r in rows) for k in ("pv", "ev", "ac")}
     total["ac"] += tools
     total["name"] = "รวม 3 Sprints"
@@ -251,8 +253,14 @@ def build_summary(metrics, prs):
         i = indices(r)
         delay = r.get("delay_days", "")
         out.append(f"| {r['name']} | {thb(r['pv'])} | {thb(r['ev'])} | {thb(r['ac'])} | "
-                   f"{thb(i['sv'])} | {thb(i['cv'])} | {i['spi']:.2f} | {i['cpi']:.2f} | "
+                   f"{thb(i['sv'])} | {thb(i['cv'])} | {i['spi']:.2f} | {i['cpi']:.3f} | "
                    f"{delay} |")
+
+    out += ["", "## SPI ณ วันสิ้นสุดตามแผนของแต่ละ Sprint (มุมมองที่ไม่บอด)", "",
+            "| Sprint | วันสิ้นสุดตามแผน | PV | EV ณ วันนั้น | SPI |", "|---|---|---:|---:|---:|"]
+    for r in rows:
+        out.append(f"| {r['name']} | {r['planned_end']} | {thb(r['pv'])} | "
+                   f"{thb(r['ev_at_planned_end'])} | {r['ev_at_planned_end'] / r['pv']:.2f} |")
 
     lines, balance_h, balance_thb = reserve_ledger(metrics)
     out += ["", "## Contingency Reserve", "", "| รายการ | เรื่อง | เบิก (ชม.) | คงเหลือ (ชม.) |",
