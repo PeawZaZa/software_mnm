@@ -37,11 +37,11 @@
 | Technical | Critical/High defects ค้าง | 0 | 0 ในโค้ดส่งมอบ · ⚠️ `main` เดิมเสียจนกว่า release จะถูก merge (REL-01) | 🟡 |
 | Business | Scope delivery (CR-01 · CR-02) | 100% | 100% | 🟢 |
 | Business | UAT first-time pass | 100% | 87.5% → 100% | 🟡 |
-| Business | Cross-team UAT | 100% | ______ | ⬜ |
+| Business | UAT รอบตรวจรับ | 100% (Cross-team) | 8/8 แบบจำลองโดยทีม — ไม่มี Cross-team | 🟡 |
 | Business | Sponsor satisfaction | ≥ 4/5 | ______ | ⬜ |
 | Business | ROI 3 ปี | > 0 | +34.2% | 🟢 |
 
-**สรุป 20 ตัวชี้วัด:** 🟢/🏆 13 · 🟡 3 · 🔴 2 · ⬜ 2 (กรอกหลังกิจกรรมในห้องเรียน)
+**สรุป 20 ตัวชี้วัด:** 🟢/🏆 13 · 🟡 4 · 🔴 2 · ⬜ 1 (Sponsor satisfaction กรอกหลังนำเสนอ)
 
 > ทีมเลือกรายงานมิติเวลาว่า**ไม่ผ่าน** ทั้งที่ใช้ SPI ปลายทาง 1.00 ได้ — เพราะความจริงคือส่งช้า 2 ใน 3 sprints
 > และนี่คือบทเรียนอันดับหนึ่งที่ส่งต่อให้โครงการถัดไป

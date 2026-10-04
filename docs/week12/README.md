@@ -9,7 +9,7 @@
 
 | ส่วน | วิชา | ชิ้นงาน | ไฟล์ | สถานะ |
 |---|---|---|---|---|
-| 1 | ENGSE225 | UAT Sign-off Sheet | [UAT_Test_Scenarios_and_Signoff.md](UAT_Test_Scenarios_and_Signoff.md) | ✅ รอบซ้อม 8/8 · ⬜ รอ Cross-team + ลายเซ็น |
+| 1 | ENGSE225 | UAT Sign-off Sheet | [UAT_Test_Scenarios_and_Signoff.md](UAT_Test_Scenarios_and_Signoff.md) | ✅ UAT จำลอง 8/8 · ⬜ รอลายเซ็น |
 | 1 | ENGSE225 | `main` + Tag `v2.0.0-evolution` | [Release_Runbook_v2.0.0-evolution.md](Release_Runbook_v2.0.0-evolution.md) · [Release Notes](Release_Notes_v2.0.0-evolution.md) | ⬜ ทำหลังได้ลายเซ็น UAT |
 | 1 | ENGSE225 | CHANGELOG + รายงาน ISO/IEC 14764 | [CHANGELOG.md](../../CHANGELOG.md) · [Maintenance_Summary_Report_ISO14764.md](Maintenance_Summary_Report_ISO14764.md) | ✅ |
 | 1 | ENGSE225 | PyTest 100% | [`evidence/regression_release_candidate.txt`](evidence/regression_release_candidate.txt) | ✅ บนเครื่อง · ⚠️ CI ติด billing |
@@ -31,7 +31,7 @@
 
 ## ⬜ งานที่ต้องทำเอง
 
-- [ ] **Cross-team UAT** — ยื่น [UAT sheet ข้อ 5](UAT_Test_Scenarios_and_Signoff.md#5-cross-team-uat-ทำในห้องเรียน) ให้กลุ่มข้างเคียงทดสอบ เปิด CSV ใน Excel จริง แล้วลงนาม
+- [x] **UAT จำลอง** 8/8 — [UAT sheet ข้อ 5](UAT_Test_Scenarios_and_Signoff.md#5-uat-รอบตรวจรับ--จำลอง-simulated-uat) (ไม่ได้ทำ Cross-team เพราะไม่มีเวลา) · ⬜ ลงนามใบ sign-off
 - [ ] **Release** ตาม [Runbook](Release_Runbook_v2.0.0-evolution.md) ขั้นที่ 2–6 (push → PR → Tech Lead approve → tag → GitHub Release)
 - [ ] **Jira:** ปิดใบ S3-01…09 + UAT-DEF-01 → Complete Sprint 3 → แคป Velocity Report และ Epic Burndown
 - [ ] **Jira:** ทุกคน Log Work แล้วแก้ `actual_hours` ใน [`../data/project_metrics.json`](../data/project_metrics.json) → รัน `python tools/pm_metrics.py`

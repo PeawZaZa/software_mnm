@@ -76,31 +76,24 @@ return True, "Stock updated."
 CR-01 เพิ่ม `reorder_point` และเมนู 6 สำหรับ*ดูรายการ* แต่ไม่ได้ต่อเข้ากับจังหวะ*ขายของ*
 เทสต์ของ CR-01 ทดสอบ `get_reorder_list()` แยกเดี่ยว จึงไม่มีเทสต์ไหนจับได้ — จับได้เมื่อทดสอบเป็นวงจรผู้ใช้ใน UAT
 
-## 5. Cross-Team UAT (ทำในห้องเรียน)
+## 5. UAT รอบตรวจรับ — **จำลอง** (Simulated UAT)
 
-เพื่อขจัด **Confirmation Bias** ของทีมพัฒนา ให้ตัวแทนกลุ่มอื่นทดสอบในฐานะผู้ใช้จริง
+> ⚠️ **ทีมจัดทำ UAT แบบจำลอง เนื่องจากไม่มีเวลาจัด Cross-team UAT กับกลุ่มอื่น**
+> สคริปต์ [`tools/run_uat.py`](../../tools/run_uat.py) เล่นบทผู้ใช้ทั้ง 4 บทบาท ป้อนข้อมูลผ่านหน้าจอ CLI จริงของโปรแกรม
+> บนโค้ดล่าสุด (`develop` @ `7feb2e4`) — **ไม่ได้ทดสอบโดยคนนอกทีม** จึงยังมีความเสี่ยงเรื่อง Confirmation Bias
+> ถ้ามีเวลาก่อนนำเสนอ ให้กลุ่มอื่นทดสอบตามตารางข้อ 2 แล้วกรอกเพิ่มในคอลัมน์ "ผู้ทดสอบภายนอก"
 
-**วิธีเตรียมเครื่องให้ผู้ทดสอบ**
-
-```bash
-git clone https://github.com/PeawZaZa/software_mnm.git && cd software_mnm
-git checkout release/v2.0.0-evolution      # หรือ develop หลัง merge
-del data.json 2>nul                        # Windows — เริ่มจากข้อมูลตั้งต้น (macOS/Linux: rm -f data.json)
-python app_v2.py
-```
-
-ยื่นตารางข้อ 2 ให้ผู้ทดสอบ ป้อนข้อมูลตามทีละแถว แล้วกรอกผลด้านล่างด้วยลายมือ
-
-| ID | Pass / Fail | สิ่งที่เห็นบนหน้าจอ (ถ้า Fail) | ผู้ทดสอบ |
+| ID | ผลจำลอง (`develop` @ `7feb2e4`) | สิ่งที่เห็นบนหน้าจอ | ผู้ทดสอบภายนอก (ถ้ามี) |
 |---|---|---|---|
-| UAT-SC01 | | | |
-| UAT-SC02 | | | |
-| UAT-SC02-B | | | |
-| UAT-SC03 (เปิดใน Excel จริง) | | | |
-| UAT-SC04 | | | |
-| UAT-EC01 | | | |
-| UAT-EC02 | | | |
-| UAT-EC03 | | | |
+| UAT-SC01 | ✅ Pass | `Done.` · `Name: Milk \| Stock: 10` | |
+| UAT-SC02 | ✅ Pass | `!!! WARNING ... !!! !!! REORDER POINT REACHED: 4 left (reorder point 5) !!!` | |
+| UAT-SC02-B | ✅ Pass | `!!! REORDER POINT REACHED: 28 left (reorder point 30) !!!` | |
+| UAT-SC03 | ✅ Pass (ตรวจไฟล์: BOM · header · แถว Milk) — ⚠️ ยังไม่ได้เปิดใน Excel จริง | `Exported 5 products to .../uat_report.csv` | |
+| UAT-SC04 | ✅ Pass | `Total inventory value: 1900.0 THB` | |
+| UAT-EC01 | ✅ Pass | `Error: Not enough stock!` · สต๊อกยัง 4 | |
+| UAT-EC02 | ✅ Pass | `must be numbers` · `must not be negative` · ไม่มี Traceback | |
+| UAT-EC03 | ✅ Pass | Export 2 รอบ ไม่มีแถวซ้ำ | |
+| **รวม** | **8 / 8** | Transcript: [`evidence/uat_run_3_simulated_final.txt`](evidence/uat_run_3_simulated_final.txt) | |
 
 ---
 
@@ -110,8 +103,9 @@ python app_v2.py
 |---|---|
 | ระบบ | Mini Inventory System v2.0.0-evolution |
 | จำนวน Scenarios | 8 |
-| ผ่าน | ______ / 8 |
-| ข้อบกพร่องที่ค้าง | ______ รายการ |
+| ผ่าน | **8 / 8** (UAT จำลอง — ข้อ 5) |
+| ข้อบกพร่องที่ค้าง | **0** รายการ (UAT-DEF-01 แก้แล้ว) |
+| วิธีทดสอบ | จำลองโดยทีมผ่าน `tools/run_uat.py` — ไม่ใช่ Cross-team |
 
 **ข้อความรับรอง** — ข้าพเจ้าได้ทดสอบระบบตาม UAT Scenarios ข้างต้นในฐานะผู้ใช้งาน
 และยืนยันว่าระบบตอบโจทย์ทางธุรกิจตามขอบเขตที่ตกลงไว้ใน Scope Freeze Agreement (SFA-2026-001)
@@ -119,7 +113,7 @@ python app_v2.py
 
 | บทบาท | ชื่อ | กลุ่ม | ลายมือชื่อ | วันที่ |
 |---|---|---|---|---|
-| ตัวแทนผู้ทดสอบ (ลูกค้าสมมติ) | | | | |
+| ตัวแทนผู้ทดสอบ (ลูกค้าสมมติ) — ถ้าไม่มีคนนอก ให้อาจารย์/PM ลงนามในฐานะผู้รับรองผลจำลอง | | | | |
 | Tech Lead | พนาวุฒน์ อภิปสันติ | กลุ่มเจ้าของระบบ | | |
 | QA | ตรัยรัตน์ วงษ์สิทธิ์ | กลุ่มเจ้าของระบบ | | |
 

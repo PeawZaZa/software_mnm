@@ -14,7 +14,7 @@
 
 | # | เงื่อนไข | สถานะ | หลักฐาน |
 |---|---|---|---|
-| 1 | UAT Sign-off ลงนามครบ | ⬜ **รอลงนาม** | [UAT Sheet ข้อ 6](UAT_Test_Scenarios_and_Signoff.md#6-ใบรับรองการตรวจรับงาน-uat-sign-off-certificate) — รอบซ้อมภายในผ่าน 8/8 |
+| 1 | UAT Sign-off ลงนามครบ | ⬜ **รอลงนาม** | [UAT Sheet ข้อ 6](UAT_Test_Scenarios_and_Signoff.md#6-ใบรับรองการตรวจรับงาน-uat-sign-off-certificate) — UAT จำลองผ่าน 8/8 |
 | 2 | Full Regression PyTest 100% | ✅ ผ่าน (บนเครื่อง) | [`evidence/regression_release_candidate.txt`](evidence/regression_release_candidate.txt) — 173 passed · 99% |
 | 3 | Tech Lead อนุมัติบน Pull Request | ⬜ รอเปิด PR | ขั้นที่ 3 ด้านล่าง |
 | — | CI บน GitHub Actions เขียว | ⚠️ ไม่สามารถรันได้ | บัญชีติด billing — ใช้ผลรันบนเครื่องแทน และบันทึกไว้ใน PR |
