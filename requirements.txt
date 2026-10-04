@@ -1,0 +1,8 @@
+# Runtime dependencies ของโปรแกรม
+# ─────────────────────────────────
+# Inventory System ใช้แค่ Python standard library (json, csv, os, tempfile, pathlib, dataclasses)
+# จึงไม่มีไลบรารีภายนอกที่ต้องติดตั้งเพื่อรันโปรแกรม — ตั้งใจไว้เพื่อลดความเสี่ยง supply chain
+#
+# Python >= 3.10  (ใช้ syntax  Path | None)
+#
+# เครื่องมือสำหรับทดสอบ/สแกนอยู่ใน requirements-dev.txt

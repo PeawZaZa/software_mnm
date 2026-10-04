@@ -10,6 +10,51 @@ from pathlib import Path
 db = "data.json"
 
 SAVE_FAILED_MESSAGE = "Error: could not save data to disk. No changes were made."
+ENV_FILE = ".env"
+
+
+def load_env_file(path=ENV_FILE):
+    """
+    [W13] อ่านไฟล์ .env (บรรทัดละ KEY=VALUE) เข้า os.environ — ไม่ใช้ไลบรารีภายนอก
+    ค่าที่ตั้งไว้ใน environment อยู่แล้วจะไม่ถูกทับ เพื่อให้สั่งค่าชั่วคราวจาก command line ได้
+    """
+    env_path = Path(path)
+    if not env_path.is_file():
+        return {}
+    loaded = {}
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = (part.strip() for part in line.split("=", 1))
+        value = value.strip("\"'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+            loaded[key] = value
+    return loaded
+
+
+@dataclass
+class Settings:
+    """[W13] ค่าที่ผันแปรตามเครื่อง แยกออกจากโค้ด (Twelve-Factor App ข้อ III: Config)"""
+
+    db_path: Path
+    export_dir: Path | None = None
+
+    @classmethod
+    def from_env(cls, environ=None):
+        environ = os.environ if environ is None else environ
+        export_dir = environ.get("REPORT_EXPORT_DIR")
+        return cls(
+            db_path=Path(environ.get("INVENTORY_DB_PATH") or db),
+            export_dir=Path(export_dir) if export_dir else None,
+        )
+
+    def prepare_directories(self):
+        """สร้างโฟลเดอร์ข้อมูลและโฟลเดอร์รายงานถ้ายังไม่มี (ทำครั้งเดียวตอนเปิดโปรแกรม)"""
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        if self.export_dir is not None:
+            self.export_dir.mkdir(parents=True, exist_ok=True)
 
 
 @dataclass
@@ -246,12 +291,15 @@ class CsvReportExporter:
 class ConsoleUI:
     """[SAM1-37] ชั้นติดต่อผู้ใช้ — รับ input, พิมพ์ผล และ route ไปยัง service เท่านั้น"""
 
-    def __init__(self, service, input_fn=input, print_fn=print, exporter=None):
+    def __init__(self, service, input_fn=None, print_fn=None, exporter=None,
+                 export_dir=None):
         # inject input/print เพื่อให้เขียน unit test ได้โดยไม่ต้อง monkeypatch builtins
         self.service = service
-        self.input = input_fn
-        self.print = print_fn
+        # ค่า default ผูกตอนสร้าง object ไม่ใช่ตอนนิยามคลาส — smoke test แทน input/print ได้
+        self.input = input_fn if input_fn is not None else input
+        self.print = print_fn if print_fn is not None else print
         self.exporter = exporter if exporter is not None else CsvReportExporter()
+        self.export_dir = Path(export_dir) if export_dir is not None else None  # [W13]
 
     EXIT_CHOICE = "5"
 
@@ -341,9 +389,19 @@ class ConsoleUI:
             )
         self.print("-" * 50)
 
+    def export_path(self, raw):
+        """
+        [W13] ชื่อไฟล์เปล่า ๆ จะถูกวางในโฟลเดอร์รายงาน (REPORT_EXPORT_DIR)
+        ส่วน path ที่ระบุโฟลเดอร์มาด้วยจะใช้ตามที่ผู้ใช้พิมพ์
+        """
+        path = Path(raw.strip())
+        if self.export_dir is not None and path.parent == Path("."):
+            return self.export_dir / path
+        return path
+
     def handle_export(self):
         """[CR-02] ส่งออกรายงานเป็น CSV"""
-        path = self.input("Enter output CSV path: ")
+        path = self.export_path(self.input("Enter output CSV path: "))
         try:
             rows = self.exporter.export(self.service.inventory, path)
         except OSError as e:
@@ -378,7 +436,11 @@ def save(inventory):
 
 
 def main():
-    ConsoleUI(InventoryService(InventoryRepository(db))).run()
+    load_env_file()  # [W13] อ่าน .env ในโฟลเดอร์ที่สั่งรัน (ถ้ามี)
+    settings = Settings.from_env()
+    settings.prepare_directories()
+    service = InventoryService(InventoryRepository(settings.db_path))
+    ConsoleUI(service, export_dir=settings.export_dir).run()
 
 
 if __name__ == "__main__":
