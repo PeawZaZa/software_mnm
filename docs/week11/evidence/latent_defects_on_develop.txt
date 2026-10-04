@@ -1,0 +1,13 @@
+# ยืนยันข้อบกพร่องแฝง 2 จุดบนโค้ดก่อนแก้ (develop @ 1a5c024) — รันวันที่ 2026-10-05
+# จำลองดิสก์ล้มเหลวโดยแทนที่ os.replace ให้โยน OSError
+
+Error saving data: simulated
+OLD add_update with failing disk -> (True, 'Done.')
+Error saving data: simulated
+OLD stock_out with failing disk -> (True, 'Stock updated.')
+OLD load list -> AttributeError 'list' object has no attribute 'items'
+
+# หลังแก้ (hardening/week11-flake8-bandit)
+#   add_update -> (False, 'Error: could not save data to disk. No changes were made.')
+#   stock_out  -> (False, 'Error: could not save data to disk. No changes were made.')
+#   load [1,2,3] -> "Warning: Database file is corrupted. Loading default data." แล้วโหลด default

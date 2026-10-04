@@ -1,11 +1,15 @@
 import csv
 import json
 import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-# global variables
+# path ของไฟล์ข้อมูล — ค่าคงที่ระดับโมดูล (ไม่ใช่ global state ที่ถูกแก้ระหว่างรัน)
+# test ใช้ monkeypatch เปลี่ยนค่านี้ได้ เพราะทุกคลาสอ่านค่าตอนสร้าง instance
 db = "data.json"
+
+SAVE_FAILED_MESSAGE = "Error: could not save data to disk. No changes were made."
 
 
 @dataclass
@@ -24,8 +28,17 @@ class Product:
         """คืนรูปแบบ key ย่อเดิม เพื่อให้ data.json ที่มีอยู่ยังใช้ได้ ไม่ต้อง migrate"""
         return {
             "n": self.name, "q": self.qty, "p": self.price, "c": self.category,
-            "b": self.barcode, "r": self.reorder_point, # [CR-01]
+            "b": self.barcode, "r": self.reorder_point,  # [CR-01]
         }
+
+    @property
+    def stock_value(self):
+        """[W11 Feature Envy] มูลค่าคงคลังของสินค้าชิ้นนี้ — คำนวณที่เจ้าของข้อมูล"""
+        return self.qty * self.price
+
+    def needs_reorder(self):
+        """[W11 Feature Envy] ถึงจุดสั่งซื้อซ้ำหรือยัง (reorder_point = 0 คือไม่ได้ตั้งค่า)"""
+        return self.reorder_point > 0 and self.qty <= self.reorder_point
 
     @classmethod
     def from_dict(cls, product_id, data):
@@ -63,9 +76,14 @@ class InventoryRepository:
     def load(self):
         """โหลดข้อมูลเป็น dict[str, Product] หากไฟล์เสียหรือไม่มีจะใช้ค่าเริ่มต้น"""
         if self.path.exists():
-            try: # [INV-10] เพิ่ม try/except สำหรับอ่านไฟล์
+            # [INV-10] ถ้าไฟล์เสียหรืออ่านไม่ได้ ให้โหลด default แทน
+            # [W11] ระบุ exception ให้เจาะจง แทน except Exception ครอบจักรวาล
+            try:
                 raw = json.loads(self.path.read_text(encoding="utf-8"))
-            except Exception: # [INV-10] ถ้าไฟล์เสียหรืออ่านไม่ได้ ให้โหลด default แทน
+                if not isinstance(raw, dict):
+                    raise ValueError("top-level JSON must be an object")
+            except (OSError, UnicodeDecodeError, ValueError):
+                # json.JSONDecodeError เป็น subclass ของ ValueError
                 print("Warning: Database file is corrupted. Loading default data.")
                 raw = self.DEFAULT_DATA
         else:
@@ -80,20 +98,37 @@ class InventoryRepository:
         return inventory
 
     def save(self, inventory):
-        """[INV-11] ทำ Atomic write ผ่าน tmp file เพื่อป้องกันไฟล์เสียระหว่างเซฟ"""
-        temp_path = Path(str(self.path) + ".tmp")
+        """
+        [INV-11] Atomic write: เขียนลงไฟล์ชั่วคราวให้เสร็จก่อน แล้วสลับด้วย os.replace()
+        ผลคือไฟล์จริงจะเป็นข้อมูลใหม่ทั้งหมด หรือข้อมูลเดิมทั้งหมด ไม่มีสภาพครึ่ง ๆ กลาง ๆ
+
+        [W11] คืนค่า True/False แทนการกลืน error เงียบ ๆ เพื่อให้ชั้น service รู้ว่าบันทึกไม่สำเร็จ
+        """
+        payload = {pid: product.to_dict() for pid, product in inventory.items()}
+        directory = self.path.parent
+        temp_name = None
         try:
-            payload = {pid: product.to_dict() for pid, product in inventory.items()}
-            temp_path.write_text(json.dumps(payload), encoding="utf-8")
-            os.replace(temp_path, self.path) # [INV-11] replace ไฟล์ต้นฉบับเมื่อเขียนเสร็จสมบูรณ์
-        except Exception as e:
+            # ไฟล์ชั่วคราวต้องอยู่โฟลเดอร์เดียวกับไฟล์จริง os.replace() จึงเป็น atomic
+            fd, temp_name = tempfile.mkstemp(
+                prefix=self.path.name + ".", suffix=".tmp", dir=directory
+            )
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())  # ให้ข้อมูลลงดิสก์จริงก่อนสลับไฟล์
+            os.replace(temp_name, self.path)
+            return True
+        except OSError as e:
             print(f"Error saving data: {e}")
+            if temp_name and os.path.exists(temp_name):
+                os.remove(temp_name)  # ไม่ทิ้งไฟล์ .tmp ค้างไว้
+            return False
 
 
 class InventoryService:
     """[SAM1-34] business logic ทั้งหมด — ไม่ยุ่งกับ input/print และไม่ยุ่งกับไฟล์โดยตรง"""
 
-    LOW_STOCK = 10 # [INV-9] เกณฑ์เดียวใช้ร่วมกันทั้งเมนู 3 และเมนู 4
+    LOW_STOCK = 10  # [INV-9] เกณฑ์เดียวใช้ร่วมกันทั้งเมนู 3 และเมนู 4
 
     def __init__(self, repository):
         self.repository = repository
@@ -110,13 +145,17 @@ class InventoryService:
             return False, "Invalid input: Reorder Point must not be negative."
         return True, ""
 
-    def _barcode_owner(self, barcode, exclude_id):
-        """[#20] คืน id ของสินค้าตัวอื่นที่ใช้บาร์โค้ดนี้อยู่ (บาร์โค้ดว่างไม่นับ)"""
+    def _products_with_barcode(self, barcode):
+        """[W11 Duplicate Code] จุดเดียวที่วนหาสินค้าจากบาร์โค้ด (บาร์โค้ดว่างไม่นับว่าตรงกัน)"""
         if not barcode:
-            return None
-        for product_id, product in self.inventory.items():
-            if product.barcode == barcode and product_id != exclude_id:
-                return product_id
+            return []
+        return [p for p in self.inventory.values() if p.barcode == barcode]
+
+    def _barcode_owner(self, barcode, exclude_id):
+        """[#20] คืน id ของสินค้าตัวอื่นที่ใช้บาร์โค้ดนี้อยู่"""
+        for product in self._products_with_barcode(barcode):
+            if product.id != exclude_id:
+                return product.id
         return None
 
     def add_update(self, product_id, name, qty, price, category,
@@ -129,10 +168,17 @@ class InventoryService:
         owner = self._barcode_owner(barcode, product_id)
         if owner is not None:
             return False, f"Error: Barcode {barcode} is already used by product {owner}."
+        previous = self.inventory.get(product_id)
         self.inventory[product_id] = Product(
             product_id, name, qty, price, category, barcode, reorder_point
         )
-        self.repository.save(self.inventory)
+        if not self.repository.save(self.inventory):
+            # [W11] บันทึกไม่สำเร็จ → ย้อนข้อมูลในหน่วยความจำ ให้ตรงกับไฟล์บนดิสก์
+            if previous is None:
+                del self.inventory[product_id]
+            else:
+                self.inventory[product_id] = previous
+            return False, SAVE_FAILED_MESSAGE
         return True, "Done."
 
     def stock_out(self, product_id, amt):
@@ -147,29 +193,26 @@ class InventoryService:
             return False, "Error: Not enough stock!"
 
         product.qty -= amt
-        self.repository.save(self.inventory)
+        if not self.repository.save(self.inventory):
+            product.qty += amt  # [W11] ย้อนกลับ เพราะไฟล์บนดิสก์ยังเป็นค่าเดิม
+            return False, SAVE_FAILED_MESSAGE
         if product.qty < self.LOW_STOCK:
             return True, "Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!!"
         return True, "Stock updated."
 
     def find_by_barcode(self, barcode):
-        """[CR-01] ค้นสินค้าจากบาร์โค้ด คืน None ถ้าไม่เจอ (บาร์โค้ดว่างไม่นับว่าตรงกัน)"""
-        if not barcode:
-            return None
-        for product in self.inventory.values():
-            if product.barcode == barcode:
-                return product
-        return None
+        """[CR-01] ค้นสินค้าจากบาร์โค้ด คืน None ถ้าไม่เจอ"""
+        matches = self._products_with_barcode(barcode)
+        return matches[0] if matches else None
 
     def get_reorder_list(self):
         """[CR-01] สินค้าที่ถึงจุดสั่งซื้อซ้ำแล้ว (qty <= reorder_point ของชิ้นนั้น)"""
-        return [p for p in self.inventory.values()
-                if p.reorder_point > 0 and p.qty <= p.reorder_point]
+        return [p for p in self.inventory.values() if p.needs_reorder()]
 
     def get_summary(self):
         """คืน (จำนวนชนิดสินค้า, มูลค่ารวม, รายชื่อสินค้าที่สต๊อกต่ำ)"""
         total_items = len(self.inventory)
-        total_val = sum(p.qty * p.price for p in self.inventory.values())
+        total_val = sum(p.stock_value for p in self.inventory.values())
         low_stock_list = [p.name for p in self.inventory.values() if p.qty < self.LOW_STOCK]
         return total_items, float(total_val), low_stock_list
 
@@ -204,34 +247,37 @@ class ConsoleUI:
         self.print = print_fn
         self.exporter = exporter if exporter is not None else CsvReportExporter()
 
+    EXIT_CHOICE = "5"
+
+    def menu(self):
+        """
+        [W11] ตารางเมนู เลข → (ชื่อ, handler) แทน if/elif 8 ชั้น
+        ลด Cyclomatic Complexity ของ run() จาก 9 เหลือ 5
+        """
+        return {
+            "1": ("Show all", self.handle_show),
+            "2": ("Add or Update", self.handle_add),
+            "3": ("Out", self.handle_out),
+            "4": ("Inventory Summary", self.handle_summary),  # [INV-12] เดิมชื่อ Check Check
+            self.EXIT_CHOICE: ("Exit", None),
+            "6": ("Reorder List", self.handle_reorder),  # [CR-01]
+            "7": ("Export CSV", self.handle_export),  # [CR-02]
+        }
+
     def run(self):
+        menu = self.menu()
         while True:
             self.print("")
             self.print("=== INVENTORY SYSTEM v2.0 ===")
-            self.print("1. Show all")
-            self.print("2. Add or Update")
-            self.print("3. Out")
-            self.print("4. Inventory Summary") # [INV-12] เปลี่ยนชื่อจาก Check Check
-            self.print("5. Exit")
-            self.print("6. Reorder List") # [CR-01]
-            self.print("7. Export CSV") # [CR-02]
+            for key, (label, _) in menu.items():
+                self.print(f"{key}. {label}")
             choice = self.input("Select menu: ")
 
-            if choice == "1":
-                self.handle_show()
-            elif choice == "2":
-                self.handle_add()
-            elif choice == "3":
-                self.handle_out()
-            elif choice == "4":
-                self.handle_summary()
-            elif choice == "6":
-                self.handle_reorder()
-            elif choice == "7":
-                self.handle_export()
-            elif choice == "5":
+            if choice == self.EXIT_CHOICE:
                 self.print("Bye")
                 break
+            if choice in menu:
+                menu[choice][1]()
             else:
                 self.print("Invalid choice, try again.")
 
@@ -247,14 +293,14 @@ class ConsoleUI:
     def handle_add(self):
         product_id = self.input("Enter ID: ")
         name = self.input("Enter Name: ")
-        try: # [INV-6] ดักผู้ใช้พิมพ์ตัวอักษรในช่องตัวเลข
+        try:  # [INV-6] ดักผู้ใช้พิมพ์ตัวอักษรในช่องตัวเลข
             qty = int(self.input("Enter Qty: "))
             price = float(self.input("Enter Price: "))
         except ValueError:
             self.print("Invalid input: Qty and Price must be numbers.")
             return
         category = self.input("Enter Category: ")
-        barcode = self.input("Enter Barcode (leave blank if none): ") # [CR-01]
+        barcode = self.input("Enter Barcode (leave blank if none): ")  # [CR-01]
         try:
             reorder_point = int(self.input("Enter Reorder Point: "))
         except ValueError:
@@ -267,7 +313,7 @@ class ConsoleUI:
 
     def handle_out(self):
         product_id = self.input("Enter product ID to cut stock: ")
-        try: # [INV-6] ดักการรับค่าตัวอักษร
+        try:  # [INV-6] ดักการรับค่าตัวอักษร
             amt = int(self.input("How many items out?: "))
         except ValueError:
             self.print("Invalid input: Amount must be a number.")
@@ -310,17 +356,20 @@ class ConsoleUI:
 # test_app.py (regression suite ของ Sprint 1) ยังเรียก API ระดับโมดูลอยู่
 # จึงคง signature เดิมไว้ แล้ว delegate ให้ InventoryRepository
 
-LOW_STOCK = InventoryService.LOW_STOCK # alias ให้โค้ด/เทสต์เดิมที่อ้าง app_v2.LOW_STOCK
+LOW_STOCK = InventoryService.LOW_STOCK  # alias ให้โค้ด/เทสต์เดิมที่อ้าง app_v2.LOW_STOCK
+
 
 def load(inventory):
     """โหลดข้อมูลเข้า dict รูปแบบเดิม (key ย่อ n/q/p/c)"""
     loaded = InventoryRepository(db).load()
     inventory.update({pid: product.to_dict() for pid, product in loaded.items()})
 
+
 def save(inventory):
     """บันทึก dict รูปแบบเดิมลงไฟล์"""
     products = {pid: Product.from_dict(pid, item) for pid, item in inventory.items()}
     InventoryRepository(db).save(products)
+
 
 def main():
     ConsoleUI(InventoryService(InventoryRepository(db))).run()

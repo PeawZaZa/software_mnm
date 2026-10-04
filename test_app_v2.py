@@ -69,7 +69,7 @@ class TestProductToDict:
         """
         d = noodles.to_dict()
         assert d == {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food",
-                     "b": "", "r": 0} # b/r เพิ่มโดย CR-01
+                     "b": "", "r": 0}  # b/r เพิ่มโดย CR-01
 
     def test_to_dict_excludes_id(self, noodles):
         """id เป็น key ของ dict ชั้นนอก จึงต้องไม่ซ้ำอยู่ข้างใน"""
@@ -138,7 +138,8 @@ class TestRepositoryLoad:
 
     def test_reads_existing_file(self, repo):
         """มีไฟล์ → ต้องอ่านจากไฟล์"""
-        repo.path.write_text(json.dumps({"999": {"n": "Custom", "q": 7, "p": 99.0, "c": "Special"}}))
+        data = {"999": {"n": "Custom", "q": 7, "p": 99.0, "c": "Special"}}
+        repo.path.write_text(json.dumps(data))
         inv = repo.load()
         assert inv == {"999": Product("999", "Custom", 7, 99.0, "Special")}
 
@@ -171,7 +172,7 @@ class TestRepositorySave:
         repo.save({"101": Product("101", "Mama Noodles", 50, 6.0, "Food")})
         assert json.loads(repo.path.read_text()) == {
             "101": {"n": "Mama Noodles", "q": 50, "p": 6.0, "c": "Food",
-                    "b": "", "r": 0} # b/r เพิ่มโดย CR-01
+                    "b": "", "r": 0}  # b/r เพิ่มโดย CR-01
         }
 
     def test_roundtrip_preserves_data(self, repo):
@@ -496,7 +497,7 @@ class TestIntegration:
         """
         path = str(tmp_path / "data_test.json")
         inputs = iter([
-            "2", "P01", "Widget", "25", "4.0", "Tools", "8850001", "5", # เพิ่มสินค้าใหม่
+            "2", "P01", "Widget", "25", "4.0", "Tools", "8850001", "5",  # เพิ่มสินค้าใหม่
             "3", "P01", "20",                              # ตัดออก 20 เหลือ 5
             "4",                                           # ดูสรุป
             "5",                                           # ออก
@@ -539,7 +540,8 @@ class TestProductBarcodeAndReorderPoint:
         }
 
     def test_from_dict_reads_new_keys(self):
-        p = Product.from_dict("X", {"n": "Item", "q": 1, "p": 2.0, "c": "T", "b": "8850001", "r": 5})
+        raw = {"n": "Item", "q": 1, "p": 2.0, "c": "T", "b": "8850001", "r": 5}
+        p = Product.from_dict("X", raw)
         assert p.barcode == "8850001"
         assert p.reorder_point == 5
 
