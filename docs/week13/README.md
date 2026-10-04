@@ -15,7 +15,7 @@
 | 4 | ENGSE225 | `setup.sh` + `.env.example` | [`setup.sh`](../../setup.sh) · [`setup.ps1`](../../setup.ps1) · [`.env.example`](../../.env.example) | ✅ |
 | 1 | ENGSE202 | Project KPI Scorecard | [Project_KPI_Scorecard.md](Project_KPI_Scorecard.md) | ✅ |
 | 2 | ENGSE202 | Lessons Learned Register | [Lessons_Learned_Register.md](Lessons_Learned_Register.md) | ✅ 11 รายการ |
-| 3 | ENGSE202 | หลักฐานปิดกระดาน Jira + Release 2.0.0 | [Jira_Closure_Guide.md](Jira_Closure_Guide.md) | ⬜ ต้องกดใน Jira |
+| 3 | ENGSE202 | หลักฐานปิดกระดาน Jira + Release 2.0.0 | [Jira_Closure_Guide.md](Jira_Closure_Guide.md) | ✅ ปิดผ่าน Atlassian connector · ⬜ แคปภาพ |
 | 4 | ENGSE202 | Draft Project Closure Report | [Draft_Project_Closure_Report.md](Draft_Project_Closure_Report.md) | ✅ ฉบับร่าง |
 
 ## ตัวเลขสำคัญ

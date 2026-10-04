@@ -23,14 +23,14 @@
 | 2 | Master KPI Scorecard | [Master_KPI_Scorecard.md](Master_KPI_Scorecard.md) | ✅ (2 ช่องเติมหลังกิจกรรม) |
 | 3 | Procurement & Reserve Close-out | [Procurement_and_Reserve_Closeout_Sheet.md](Procurement_and_Reserve_Closeout_Sheet.md) | ✅ |
 | 4 | Comprehensive Lessons Learned Register | [Comprehensive_Lessons_Learned_Register.md](Comprehensive_Lessons_Learned_Register.md) | ✅ 13 รายการ |
-| 5 | Final Defense Slide Deck | [Storyboard](../week14/Final_Defense_Storyboard.md) | ⬜ ดูหมายเหตุด้านล่าง |
+| 5 | Final Defense Slide Deck | [สไลด์ 15 หน้า (claude.ai)](https://claude.ai/artifact/NTXw24yjoxAdmHHu3LPz7L) · [Storyboard](../week14/Final_Defense_Storyboard.md) | ✅ ดาวน์โหลดเป็น PPTX/PDF ได้จากหน้าสไลด์ |
 | — | Final Project Acceptance Certificate | [Final_Project_Acceptance_Certificate.md](Final_Project_Acceptance_Certificate.md) | ⬜ Sponsor ลงนาม |
 | — | Team Release & Peer Review | [Team_Release_and_Peer_Review.md](Team_Release_and_Peer_Review.md) | ⬜ ทุกคนกรอก |
 
 ## ⬜ ลำดับงานที่ต้องทำเองก่อนวันนำเสนอ
 
-1. ลงนามใบ UAT (ผล UAT จำลอง 8/8 พร้อมแล้ว) → push → PR release เข้า `main` → tag `v2.0.0-evolution` ([Runbook](../week12/Release_Runbook_v2.0.0-evolution.md))
-2. Merge `develop` (งานสัปดาห์ที่ 13–14) เข้า `main` อีกรอบ → tag `v2.0.1-evolution` → แนบไฟล์ใน [`../week14/artifacts/`](../week14/artifacts/) กับ GitHub Release
-3. ปิดงาน Jira ตาม [Jira Closure Guide](../week13/Jira_Closure_Guide.md)
+1. ✅ merge เข้า `main` + tag `v2.0.0-evolution` และ `v2.0.1-evolution` แล้ว · ⬜ ลงนามใบ UAT · ⬜ สร้างหน้า GitHub Release แนบไฟล์ใน [`../week14/artifacts/`](../week14/artifacts/)
+2. ✅ Jira: Sprint 3 ปิด · Release `2.0.0-evolution` released · 45/45 issues · ⬜ แคปภาพหลักฐาน
+3. ⬜ ทุกคน Log Work
 4. ซ้อมสาธิตบนเครื่องอื่นตาม [Live Demo Script](Live_Demo_and_Defense_Script.md)
 5. หลังนำเสนอ: ลงนามเอกสาร → ทำ [Repository Ownership Transfer](Technical_Handover_Certificate.md#4-repository-ownership-transfer-เจ้าของบัญชี-peawzaza-ทำ) → Archive Jira

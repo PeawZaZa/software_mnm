@@ -11,10 +11,10 @@
 | รายการ | สถานะ |
 |---|---|
 | Sprint 1 · Sprint 2 | ✅ Closed |
-| Sprint 3 (SAM1-49…58) | 🟢 Active · Done 9/10 · เหลือ **SAM1-56 Release** (In Progress — ปิดหลัง merge เข้า `main` + tag) |
-| Version `2.0.0-evolution` | ✅ สร้างแล้ว (Unreleased) |
+| Sprint 3 (SAM1-49…58) | ✅ Closed · Done 10/10 |
+| Version `2.0.0-evolution` | ✅ **Released** 2026-10-05 · 45 issues |
 | Version `3.0` + FB-01…04 (SAM1-59…62) | ✅ สร้างแล้ว อยู่ใน Backlog ไม่อยู่ใน sprint |
-| Fix version ของงานที่ส่งมอบ | ⬜ ทำด้วย Bulk change (ข้อ 3) |
+| Fix version ของงานที่ส่งมอบ | ✅ ตั้งครบ 45 ใบ |
 | Log Work | ⬜ สมาชิกต้องลงเอง — ห้ามลงแทนกัน |
 
 ## 1. ตรวจ Zero Open Tasks
