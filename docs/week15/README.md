@@ -31,6 +31,7 @@
 
 1. ✅ merge เข้า `main` + tag `v2.0.0-evolution` และ `v2.0.1-evolution` แล้ว · ⬜ ลงนามใบ UAT · ⬜ สร้างหน้า GitHub Release แนบไฟล์ใน [`../week14/artifacts/`](../week14/artifacts/)
 2. ✅ Jira: Sprint 3 ปิด · Release `2.0.0-evolution` released · 45/45 issues · ⬜ แคปภาพหลักฐาน
-3. ⬜ ทุกคน Log Work
+3. ✅ Log Work จำลอง 169 ชม. ลงครบ 45 ใบ (ระบุในทุก worklog ว่าเป็นค่าประมาณ)
+4. ✅ เปิด CSV ด้วย LibreOffice Calc จริง — ภาษาไทยและชื่อที่มีจุลภาคถูกต้อง ([ภาพ](evidence/csv_in_libreoffice_low_stock.png)) · เครื่องไม่มี Excel
 4. ซ้อมสาธิตบนเครื่องอื่นตาม [Live Demo Script](Live_Demo_and_Defense_Script.md)
 5. หลังนำเสนอ: ลงนามเอกสาร → ทำ [Repository Ownership Transfer](Technical_Handover_Certificate.md#4-repository-ownership-transfer-เจ้าของบัญชี-peawzaza-ทำ) → Archive Jira

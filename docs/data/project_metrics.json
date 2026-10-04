@@ -66,7 +66,8 @@
       "actual_hours": {
         "value": 64.5,
         "status": "assumed",
-        "basis": "แผน 64 ชม. + งานทำซ้ำที่เห็นใน git: PR #14 → revert #15 → merge ใหม่ #19 ใช้เวลารวม ~32 นาที (≈ 0.5 ชม.)"
+        "basis": "แผน 64 ชม. + งานทำซ้ำที่เห็นใน git: PR #14 → revert #15 → merge ใหม่ #19 ใช้เวลารวม ~32 นาที (≈ 0.5 ชม.)",
+        "jira_worklog": "ลงใน Jira แล้ว 2026-10-05 — ค่าประมาณ (จำลอง) ตามตัวเลขนี้ ทุก worklog มีหมายเหตุว่าไม่ใช่ timesheet จริง"
       },
       "completed_by_planned_end": 4,
       "completed_by_planned_end_source": "Jira: SAM1-11/12/13/25 ปิดภายใน 2026-07-13 (docs/EVM_Analysis.md)"
@@ -87,7 +88,8 @@
       "actual_hours": {
         "value": 67.0,
         "status": "assumed",
-        "basis": "แผน 60 ชม. + เบิกกันชน 7 ชม. ตามที่บันทึกไว้ใน Contingency_Reserve_Log.md (ไม่พบงานทำซ้ำใน git)"
+        "basis": "แผน 60 ชม. + เบิกกันชน 7 ชม. ตามที่บันทึกไว้ใน Contingency_Reserve_Log.md (ไม่พบงานทำซ้ำใน git)",
+        "jira_worklog": "ลงใน Jira แล้ว 2026-10-05 — ค่าประมาณ (จำลอง) ตามตัวเลขนี้ ทุก worklog มีหมายเหตุว่าไม่ใช่ timesheet จริง"
       },
       "completed_by_planned_end": 19,
       "completed_by_planned_end_source": "PR #23–#26 merge 2026-09-07 01:17–01:20 ตรงวันสิ้นสุดตามแผน"
@@ -107,7 +109,8 @@
       "actual_hours": {
         "value": 37.5,
         "status": "assumed",
-        "basis": "แผน 36 ชม. + เบิกกันชน UAT-DEF-01 1.5 ชม. (ไม่พบงานทำซ้ำใน git)"
+        "basis": "แผน 36 ชม. + เบิกกันชน UAT-DEF-01 1.5 ชม. (ไม่พบงานทำซ้ำใน git)",
+        "jira_worklog": "ลงใน Jira แล้ว 2026-10-05 — ค่าประมาณ (จำลอง) ตามตัวเลขนี้ ทุก worklog มีหมายเหตุว่าไม่ใช่ timesheet จริง"
       },
       "completed_by_planned_end": 0,
       "completed_by_planned_end_source": "ไม่มี commit ใดระหว่าง 2026-09-08 ถึง 2026-09-21 (git log)"
