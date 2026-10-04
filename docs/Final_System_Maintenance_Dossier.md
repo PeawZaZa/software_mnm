@@ -155,7 +155,7 @@ class InventoryService:
 | UAT-DEF-01 | ขายถึงจุดสั่งซื้อแล้วไม่เตือน | Medium | UAT W12 | ✅ `3746f1b` |
 | INST-01 | `setup.sh` เลือก `python3` stub บน Windows | Medium | Clean install W13 | ✅ `ab5d167` |
 | INST-02 | pip-audit อ่าน requirements ที่มีภาษาไทยไม่ได้ (cp1252) | Low | Dependency audit W14 | ✅ สัปดาห์ที่ 14 |
-| REL-01 | `main` ปัจจุบันรันเทสต์ของตัวเองไม่ผ่าน 24 เคส | **High** | Rollback drill W14 | 🔧 แก้เมื่อ merge release เข้า `main` |
+| REL-01 | `main` เดิมรันเทสต์ของตัวเองไม่ผ่าน 24 เคส | **High** | Rollback drill W14 | ✅ merge release เข้า `main` (`34747aa`) → 173 passed |
 
 **5 Whys** ของ DEF-03: [Maintenance Summary ข้อ 4](week12/Maintenance_Summary_Report_ISO14764.md#4-การวิเคราะห์สาเหตุราก-rca-ของข้อบกพร่องที่รุนแรงที่สุด--def-03)
 
