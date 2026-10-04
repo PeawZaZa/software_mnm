@@ -11,7 +11,7 @@
 | **Schedule Performance** | SPI (at completion) = 1.00 · **SPI ณ วันสิ้นสุดตามแผน: S1 0.25 · S2 1.00 · S3 0.00** — ส่งช้ากว่าแผน 21 / 0 / 14 วัน |
 | **Quality** | 173 tests ผ่าน 100% · coverage 99% · flake8 0 · bandit 0 · max v(G) 7 |
 | **User Acceptance** | รอบซ้อมภายใน 7/8 → 8/8 · UAT จำลองรอบตรวจรับ 8/8 (ไม่ใช่ Cross-team — ดู UAT Sheet ข้อ 5) |
-| **Release** | Tag `v2.0.0-evolution` บน `main`: ⬜ รอดำเนินการหลัง UAT sign-off |
+| **Release** | Tag `v2.0.0-evolution` บน `main` @ `34747aa` ✅ (2026-10-05) |
 
 🔶 CPI คำนวณจาก AC ประมาณการ — ดูหลักการใน [Final EVM Report](Final_EVM_and_Velocity_Report.md)
 

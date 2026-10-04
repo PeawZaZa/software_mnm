@@ -17,10 +17,10 @@
 |---|---|---|---|
 | 1.1 | ทุกงานในเกณฑ์ DoD ทำเสร็จในโค้ด | ✅ | 45/45 issues · [Final EVM](../week12/Final_EVM_and_Velocity_Report.md) |
 | 1.2 | การ์ด Jira ทุกใบใน Sprint 1–3 เป็น Done | ⬜ | ทำตาม [Jira Closure Guide](../week13/Jira_Closure_Guide.md) |
-| 1.3 | CR-01 และ CR-02 ถูกรวมเข้า `main` | ⬜ | รอ PR release → `main` ([Runbook](../week12/Release_Runbook_v2.0.0-evolution.md)) |
+| 1.3 | CR-01 และ CR-02 ถูกรวมเข้า `main` | ✅ | `main` @ `34747aa` · tag `v2.0.0-evolution` |
 | 1.4 | PyTest Full Suite 100% | ✅ | 195 passed · coverage 99% |
 | 1.5 | ผ่านการติดตั้งบน Clean Environment | ✅ | [Week 13 report](../week13/Clean_Environment_Installation_Report.md) — 25 วิ / 19 วิ |
-| 1.6 | ไม่มีข้อบกพร่อง Critical/High ค้างบน production | ⚠️ | โค้ดใน `develop` ไม่มี — แต่ **`main` ปัจจุบันเสีย (REL-01)** จะหายเมื่อทำ 1.3 |
+| 1.6 | ไม่มีข้อบกพร่อง Critical/High ค้างบน production | ✅ | REL-01 แก้แล้ว — `main` ผ่าน 173 เทสต์ |
 | 1.7 | pip-audit 0 CVEs · Bandit 0 | ✅ | [DR & Security Report](DR_and_Dependency_Security_Report.md) |
 
 ## เสาที่ 2 — Financial
