@@ -22,3 +22,16 @@ Thumbs.db
 
 # Course handout files (local only)
 การบ้าน/
+
+# Local configuration & runtime folders (สัปดาห์ที่ 13)
+.env
+.venv/
+venv/
+data/
+exports/
+*.csv
+
+# Build artifacts (สัปดาห์ที่ 14)
+build/
+dist/
+*.egg-info/
