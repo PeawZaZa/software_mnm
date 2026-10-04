@@ -8,8 +8,18 @@ cd "$(dirname "$0")"
 
 echo "--- Starting Clean Environment Setup ---"
 
-PYTHON="${PYTHON:-python3}"
-command -v "$PYTHON" >/dev/null 2>&1 || PYTHON=python
+# เลือก interpreter ตัวแรกที่ "รันได้จริง" — บน Windows คำสั่ง python3 อาจเป็นแค่ทางลัดไป Microsoft Store
+PYTHON=""
+for candidate in "${PYTHON_BIN:-}" python3 python py; do
+    if [ -n "$candidate" ] && "$candidate" -c 'import sys' >/dev/null 2>&1; then
+        PYTHON="$candidate"
+        break
+    fi
+done
+if [ -z "$PYTHON" ]; then
+    echo "ERROR: Python not found. Install Python >= 3.10 first." >&2
+    exit 1
+fi
 "$PYTHON" -c 'import sys; assert sys.version_info >= (3, 10), "Python >= 3.10 required"'
 echo "[1/5] Python: $("$PYTHON" --version)"
 
