@@ -65,5 +65,9 @@
 
 ## 6. Jira Export
 
-> ⬜ วางไฟล์ที่ export จาก Jira ไว้ในโฟลเดอร์นี้ตาม [Jira Archive Guide](../docs/week14/README.md#-งานที่ต้องทำเอง)
-> `jira_all_issues.csv` · `jira_worklogs.csv` · `jira_velocity.png` · `jira_epic_burndown.png`
+| ไฟล์ | เนื้อหา |
+|---|---|
+| [`jira_all_issues.csv`](jira_all_issues.csv) | งานทั้ง 49 ใบ — key · type · status · assignee · sprint · fix version (UTF-8 BOM เปิดใน Excel ได้) |
+| [`jira_sprints_and_release.md`](jira_sprints_and_release.md) | Sprint 1–3 · velocity · release `2.0.0-evolution` · ข้อผิดพลาด SAM1-39 ใน Sprint 3 |
+
+> ⬜ ภาพหน้าจอ Velocity / Burndown / Release report ต้องแคปจาก Jira เอง (เบราว์เซอร์ของผู้ช่วยไม่ได้ล็อกอิน Atlassian)
