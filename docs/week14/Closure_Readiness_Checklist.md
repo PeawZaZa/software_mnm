@@ -48,7 +48,7 @@
 
 | # | รายการ | สถานะ | หลักฐาน |
 |---|---|---|---|
-| 4.1 | UAT Sign-off มีลายเซ็นผู้ใช้ | ⬜ | รอบซ้อม 8/8 · รอ Cross-team + ลายเซ็น |
+| 4.1 | UAT Sign-off มีลายเซ็นผู้ใช้ | ⬜ | UAT จำลอง 8/8 · รอลายเซ็น |
 | 4.2 | Scope Freeze ถูกปฏิบัติตาม | ✅ | ไม่มีฟีเจอร์ใหม่หลัง 5 ต.ค. — คำขอใหม่อยู่ใน Future Backlog |
 | 4.3 | Phase 3 Completion Certificate ลงนาม | ⬜ | [ใบรับรอง](../week12/Phase3_Completion_Certificate.md) รอลงนาม |
 | 4.4 | Pre-Audit Maintenance Dossier ลงนาม | ⬜ | [Dossier](../Final_System_Maintenance_Dossier.md) |
@@ -69,7 +69,7 @@
 **ยังไม่พร้อมปิดโครงการ** — 8 ข้อที่ค้างทั้งหมดเป็นงานที่*คนต้องทำ* (กดใน Jira/GitHub · ลงนาม · Log Work)
 ไม่มีงานค้างด้านโค้ดหรือเอกสาร ลำดับที่แนะนำก่อนสัปดาห์ที่ 15:
 
-1. Cross-team UAT + ลายเซ็น (4.1) → เปิด PR release เข้า `main` (1.3 · แก้ 1.6 พร้อมกัน)
+1. ลายเซ็น UAT (4.1) → เปิด PR release เข้า `main` (1.3 · แก้ 1.6 พร้อมกัน)
 2. Log Work ทุกคน (2.1) → รัน `tools/pm_metrics.py` ใหม่ (2.2)
 3. ปิดการ์ด Jira + Release version (1.2) → Archive project
 4. ลงนามเอกสาร 4.3 · 4.4 และเตรียม 2.5 ในใบ Final Acceptance

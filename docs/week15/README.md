@@ -29,7 +29,7 @@
 
 ## ⬜ ลำดับงานที่ต้องทำเองก่อนวันนำเสนอ
 
-1. Cross-team UAT + ลายเซ็น → push → PR release เข้า `main` → tag `v2.0.0-evolution` ([Runbook](../week12/Release_Runbook_v2.0.0-evolution.md))
+1. ลงนามใบ UAT (ผล UAT จำลอง 8/8 พร้อมแล้ว) → push → PR release เข้า `main` → tag `v2.0.0-evolution` ([Runbook](../week12/Release_Runbook_v2.0.0-evolution.md))
 2. Merge `develop` (งานสัปดาห์ที่ 13–14) เข้า `main` อีกรอบ → tag `v2.0.1-evolution` → แนบไฟล์ใน [`../week14/artifacts/`](../week14/artifacts/) กับ GitHub Release
 3. ปิดงาน Jira ตาม [Jira Closure Guide](../week13/Jira_Closure_Guide.md)
 4. ซ้อมสาธิตบนเครื่องอื่นตาม [Live Demo Script](Live_Demo_and_Defense_Script.md)
