@@ -1,0 +1,15 @@
+# Final Defense rehearsal — 2026-10-05 · Windows 11 · Git Bash · Python 3.13.7
+# fresh git clone (develop @ 19b0e74) into an empty folder
+
+$ git clone ... && ./setup.sh
+setup exit=0 total=21s                      (clone + venv + pip + .env + smoke test)
+
+$ pytest -q --cov=app_v2
+TOTAL         287      1    99%
+195 passed in 1.25s
+
+# committee edge cases (stdin scripted)
+3 → 101 → 999        Error: Not enough stock!
+2 → X → Bad → 1 → abc  Invalid input: Qty and Price must be numbers.
+7 → r.csv (twice)    Exported 3 products to exports\r.csv  (x2) — file has header + 3 rows, no duplicates
+Traceback            (none)
