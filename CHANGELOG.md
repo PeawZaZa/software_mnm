@@ -1,5 +1,53 @@
 # Changelog
 
+บันทึกการเปลี่ยนแปลงทั้งหมดของโครงการ — รูปแบบตาม [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/)
+และเลขเวอร์ชันตาม [Semantic Versioning 2.0.0](https://semver.org/)
+
+## [2.0.0-evolution] — 2026-10-05 · Production Baseline
+
+เวอร์ชันส่งมอบทางการ รวมทุกอย่างตั้งแต่ `v1.0.0-baseline` — Sprint 1 (v1.1) · Sprint 2 (v2.0) ·
+CR-01/CR-02 (v2.1) · System Hardening สัปดาห์ที่ 11 · การแก้ข้อบกพร่องจาก UAT สัปดาห์ที่ 12
+
+> **ทำไมเป็น 2.0.0 ทั้งที่เคยมีแท็ก `v2.1`** — แท็ก `v2.0` และ `v2.1` คือจุดบันทึกภายในระหว่างพัฒนา (pre-release)
+> ที่ไม่ได้ผ่าน UAT `2.0.0-evolution` คือ**เวอร์ชันแรกที่ผ่าน UAT และถูกรวมเข้า `main`** ตามรูปแบบชื่อที่ใบงานกำหนด
+> ขึ้นเลขหลัก (major) จาก 1 เป็น 2 เพราะเปลี่ยนสถาปัตยกรรมทั้งระบบและเพิ่ม data model ทางธุรกิจใหม่
+
+### Added
+- **CR-01** บาร์โค้ด (`barcode`) และจุดสั่งซื้อซ้ำรายชิ้น (`reorder_point`) ใน `Product`
+- **CR-01** ค้นสินค้าด้วยบาร์โค้ด `find_by_barcode()` และเมนู **6. Reorder List**
+- **CR-02** เมนู **7. Export CSV** — `utf-8-sig` ให้ Excel อ่านภาษาไทยได้ · `newline=""` กันบรรทัดว่างบน Windows
+- **UAT-DEF-01** ข้อความ `REORDER POINT REACHED` ทันทีที่ตัดสต๊อกจนถึงจุดสั่งซื้อของสินค้าชิ้นนั้น
+- ชุดทดสอบอัตโนมัติ **173 เคส** coverage **99%** (`test_app.py` · `test_app_v2.py` · `test_hardening.py`)
+- CI ตรวจ flake8 · bandit · coverage ≥ 90% บน Python 3.10 และ 3.12 ทุก push/PR ไป `develop` และ `main`
+- [`tools/run_uat.py`](tools/run_uat.py) รัน UAT 8 สถานการณ์ผ่านหน้าจอ CLI จริง
+
+### Changed
+- สถาปัตยกรรมแยกชั้น `Product` → `InventoryRepository` → `InventoryService` → `ConsoleUI` (+ `CsvReportExporter`)
+- เมนู 4 เปลี่ยนชื่อจาก "Check Check" เป็น **Inventory Summary**
+- การบันทึกไฟล์เป็น atomic เต็มรูปแบบ — `tempfile` ในโฟลเดอร์เดียวกัน + `fsync` + `os.replace()`
+- `data.json` ถูกเขียนแบบ UTF-8 อ่านภาษาไทยได้ตรง ๆ และจัดย่อหน้า (key และโครงสร้างเดิม — อ่านไฟล์เก่าได้ทันที)
+- เมนูใช้ตารางแทน if/elif 8 ชั้น (Cyclomatic Complexity ของ `run()` 9 → 5)
+
+### Removed
+- ตัวแปร global `x` ที่ถูกแก้ไขจากทุกฟังก์ชัน
+- if/else ที่ทำงานเหมือนกันทั้งสองทางในเมนู Add/Update (INV-8)
+- ข้อมูลตั้งต้นที่เขียนซ้ำ 2 ที่ใน `load()` — เหลือ `DEFAULT_DATA` ที่เดียว
+- คอมเมนต์ประวัติการแก้ 111 จุดใน `test_app.py` (ประวัติอยู่ใน git แล้ว)
+
+### Fixed
+- **INV-5/6/7/9/10** ชื่อตัวแปรชนกัน · พิมพ์ตัวอักษรในช่องตัวเลขแล้วโปรแกรมตาย · ตัดสต๊อกติดลบได้ · เกณฑ์สต๊อกต่ำไม่ตรงกัน · ไฟล์เสียแล้วเปิดไม่ได้
+- **DEF-01 (#20)** บาร์โค้ดซ้ำกันได้ · **DEF-02 (#21)** reorder point ติดลบถูกบันทึก · **DEF-03 (#22)** ข้อมูลเสียแถวเดียวทำให้ทั้งระบบเปิดไม่ได้
+- ดิสก์เขียนไม่ได้แต่ระบบตอบ `Done.` — ตอนนี้แจ้ง error และย้อนข้อมูลในหน่วยความจำ (พบระหว่าง Hardening)
+- `data.json` ที่เป็น JSON array ทำให้โปรแกรมตายตั้งแต่เปิด (พบระหว่าง Hardening)
+- **UAT-DEF-01** ตัดสต๊อกสินค้าที่ reorder point สูงกว่า 10 แล้วไม่มีคำเตือน
+
+### Security
+- Bandit 0 issues · ไม่มี `eval`/`exec`/`pickle`/`subprocess` ในโค้ดโปรแกรม · ไฟล์ชั่วคราวใช้ชื่อที่คาดเดาไม่ได้
+
+---
+
+ประวัติรายรอบด้านล่างเก็บไว้ตามที่บันทึกระหว่างพัฒนา
+
 ## [v2.1] — CR-01 + CR-02 (Change Requests)
 
 ### Added
