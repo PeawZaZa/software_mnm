@@ -1,0 +1,24 @@
+# Live functional check in fresh install (.env: INVENTORY_DB_PATH=data/inventory_db.json, REPORT_EXPORT_DIR=exports)
+# keys: add P885 Milk barcode 885123456789 qty 10 reorder 5 -> cut 6 -> menu 6 -> export low_stock.csv -> exit
+
+Select menu: Enter ID: Enter Name: Enter Qty: Enter Price: Enter Category: Enter Barcode (leave blank if none): Enter Reorder Point: Done.
+Select menu: Enter product ID to cut stock: How many items out?: Stock updated. !!! WARNING: ITEM IS RUNNING VERY LOW IN STOCK !!! !!! REORDER POINT REACHED: 4 left (reorder point 5) !!!
+Select menu: --------------------------------------------------
+ID: P885 | Name: Milk | Stock: 4 | Reorder Point: 5
+--------------------------------------------------
+Select menu: Enter output CSV path: Exported 4 products to exports\low_stock.csv
+Select menu: Bye
+
+$ ls data exports
+data:
+inventory_db.json
+
+exports:
+low_stock.csv
+
+$ head -3 exports/low_stock.csv   (ไบต์แรก EF BB BF = BOM สำหรับ Excel)
+ ef bb bf
+﻿id,name,qty,price,category,barcode,reorder_point
+101,Mama Noodles,50,6.0,Food,,0
+102,Lactasoy Milk,20,12.0,Drink,,0
+P885,Milk,4,20.0,Dairy,885123456789,5
