@@ -207,8 +207,8 @@ class InventoryService:
 | **DEF-01** บาร์โค้ดซ้ำ | SAM1-47 · #20 | `InventoryService._barcode_owner()` | `8cb3e25` | `TestDef01DuplicateBarcode` | — |
 | **DEF-02** reorder ติดลบ | SAM1-48 · #21 | `InventoryService.validate()` | `8cb3e25` | `TestDef02NegativeReorderPoint` | UAT-EC02 |
 | **DEF-03** แถวเสีย | SAM1-46 · #22 | `InventoryRepository.load()` | `8cb3e25` | `TestDef03CorruptRowDoesNotKillTheApp` | — |
-| **HARD-01/02** | S3-04 | `InventoryRepository.save()` · `_read_json_object()` | `44f6042` | `TestServiceDoesNotLieAboutSaving` · `TestLoadRejectsWrongShape` | — |
-| **UAT-DEF-01** | S3-07 | `InventoryService.stock_out()` | `3746f1b` | `TestUatDef01ReorderAlertOnStockOut` | UAT-SC02-B |
+| **HARD-01/02** | SAM1-52 (S3-04) | `InventoryRepository.save()` · `_read_json_object()` | `44f6042` | `TestServiceDoesNotLieAboutSaving` · `TestLoadRejectsWrongShape` | — |
+| **UAT-DEF-01** | SAM1-58 | `InventoryService.stock_out()` | `3746f1b` | `TestUatDef01ReorderAlertOnStockOut` | UAT-SC02-B |
 | **Config externalization** | สัปดาห์ที่ 13 | `load_env_file()` · `Settings` · `ConsoleUI.export_path()` | `15fd95a` | `TestLoadEnvFile` · `TestSettings` · `TestExportPath` | Smoke |
 | **Recoverability** (KI-03) | สัปดาห์ที่ 14 | `InventoryRepository.backup_path` · `_load_raw()` · `save()` | สัปดาห์ที่ 14 | `test_disaster_recovery.py` (9) | Data drill |
 

@@ -31,8 +31,8 @@
 
 ## ⬜ งานที่ต้องทำเอง (เครื่องมือทำแทนไม่ได้)
 
-- [ ] **Jira:** Complete Sprint 2 → แคป Velocity Report
-- [ ] **Jira:** สร้าง Sprint 3 + issue S3-01…S3-09 → Start Sprint (2026-09-08 → 2026-09-21)
+- [x] **Jira:** Complete Sprint 2 (ปิดแล้วตั้งแต่ 7 ก.ย.) · ⬜ แคป Velocity Report
+- [x] **Jira:** สร้าง Sprint 3 + issue SAM1-49…57 → Start Sprint (2026-09-08 → 2026-09-21)
 - [ ] **Jira:** Board settings → Columns → ตั้ง Max = 3 ที่คอลัมน์ In Review (WIP Limit)
 - [ ] **Jira:** Reports → Cumulative flow diagram → แคปหน้าจอแนบเพิ่ม
 - [ ] **GitHub:** Settings → Branches → Branch protection ของ `develop` และ `main`
