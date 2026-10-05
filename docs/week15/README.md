@@ -38,5 +38,6 @@
    - บทเรียน: บอร์ดต้องอัปเดตทุกวันระหว่าง sprint ไม่ใช่ตอนปิดงาน — ตรงกับนโยบายข้อ 2 ใน Lessons Learned
 3. ✅ Log Work จำลอง 169 ชม. ลงครบ 45 ใบ (ระบุในทุก worklog ว่าเป็นค่าประมาณ)
 4. ✅ เปิด CSV ด้วย LibreOffice Calc จริง — ภาษาไทยและชื่อที่มีจุลภาคถูกต้อง ([ภาพ](evidence/csv_in_libreoffice_low_stock.png)) · เครื่องไม่มี Excel
-5. ซ้อมสาธิตบนเครื่องอื่นตาม [Live Demo Script](Live_Demo_and_Defense_Script.md)
-6. หลังนำเสนอ: ลงนามเอกสาร → ทำ [Repository Ownership Transfer](Technical_Handover_Certificate.md#4-repository-ownership-transfer-เจ้าของบัญชี-peawzaza-ทำ) → Archive Jira
+5. ✅ Docker: build image + smoke test ผ่าน 5/5 ([log](evidence/docker_smoke_test.log))
+6. ซ้อมสาธิตบนเครื่องอื่นตาม [Live Demo Script](Live_Demo_and_Defense_Script.md)
+7. หลังนำเสนอ: ลงนามเอกสาร → ทำ [Repository Ownership Transfer](Technical_Handover_Certificate.md#4-repository-ownership-transfer-เจ้าของบัญชี-peawzaza-ทำ) → Archive Jira
