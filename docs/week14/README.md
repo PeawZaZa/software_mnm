@@ -11,7 +11,7 @@
 |---|---|---|---|---|
 | 1 | ENGSE225 | DR & Dependency Security Report | [DR_and_Dependency_Security_Report.md](DR_and_Dependency_Security_Report.md) | ✅ |
 | 2 | ENGSE225 | Complete Maintenance Dossier (3 ภาค) | [`../Final_System_Maintenance_Dossier.md`](../Final_System_Maintenance_Dossier.md) | ✅ รอลงนาม Pre-Audit |
-| 3 | ENGSE225 | Wheel + sdist + Dockerfile | [`artifacts/`](artifacts/) · [`pyproject.toml`](../../pyproject.toml) · [`Dockerfile`](../../Dockerfile) | ✅ wheel ทดสอบแล้ว · ⚠️ Docker ยังไม่ build |
+| 3 | ENGSE225 | Wheel + sdist + Dockerfile | [`artifacts/`](artifacts/) · [`pyproject.toml`](../../pyproject.toml) · [`Dockerfile`](../../Dockerfile) | ✅ wheel ทดสอบแล้ว · ✅ Docker build + smoke test 5/5 ([log](../week15/evidence/docker_smoke_test.log)) |
 | 1 | ENGSE202 | Benefit Realization & ROI | [Benefit_Realization_ROI_Report.md](Benefit_Realization_ROI_Report.md) | ✅ |
 | 2 | ENGSE202 | Closure Readiness Checklist 4 เสา | [Closure_Readiness_Checklist.md](Closure_Readiness_Checklist.md) | ✅ 14/23 ผ่าน · 7 รอคนทำ |
 | 3 | ENGSE202 | OPAs + Lessons Compendium | [`../../project_archives/`](../../project_archives/README.md) · [Lessons_Learned_Compendium.md](Lessons_Learned_Compendium.md) | ✅ |
@@ -31,7 +31,7 @@
 
 ## ⬜ งานที่ต้องทำเอง
 
-- [ ] **Docker:** สมาชิกที่มี Docker Desktop `docker build -t mini-inventory:v2.0.1 .` + `docker run -it --rm mini-inventory:v2.0.1` → แคปภาพ `evidence/docker_run.png`
+- [x] **Docker:** ทดสอบบน Docker Desktop 29.8.1 (Windows 11) เมื่อ 2026-10-05 ด้วย [`tools/docker_smoke_test.sh`](../../tools/docker_smoke_test.sh) — build · เพิ่มสินค้า · เตือน reorder point · export CSV · ข้อมูลรอดใน volume หลังลบ container · ไม่รันด้วย root → ผ่าน 5/5 ([log](../week15/evidence/docker_smoke_test.log))
 - [ ] **Jira Archive:** Project settings → Archive project (ทำ**หลัง**สัปดาห์ที่ 15) · Filters → All issues → Export CSV (all fields) → `project_archives/jira_all_issues.csv`
 - [ ] **Jira:** Reports → Velocity / Epic burndown → แคปภาพเก็บใน `project_archives/`
 - [ ] ให้อาจารย์ลงนาม Pre-Audit ท้าย [Dossier](../Final_System_Maintenance_Dossier.md)
