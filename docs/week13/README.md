@@ -30,6 +30,6 @@
 ## ⬜ งานที่ต้องทำเอง
 
 - [ ] ทำตาม [Jira Closure Guide](Jira_Closure_Guide.md) และแคปภาพ 4 ภาพ
-- [ ] เปิด `exports/low_stock.csv` ใน Excel แคปภาพ → `evidence/excel_low_stock.png`
+- [x] เปิด CSV ด้วย **LibreOffice Calc** (เครื่องไม่มี Excel) → [`../week15/evidence/csv_in_libreoffice_low_stock.png`](../week15/evidence/csv_in_libreoffice_low_stock.png)
 - [ ] ทดสอบ `setup.sh` / `setup.ps1` บนเครื่องของสมาชิกคนอื่นอย่างน้อย 1 เครื่อง (ทดสอบแล้วบนเครื่องเดียว)
 - [ ] ประชุม Retrospective ทั้งทีม ยืนยันบทเรียน 11 ข้อ แล้วเพิ่ม/แก้ตามความเห็นสมาชิก

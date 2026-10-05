@@ -27,6 +27,14 @@ JQL ยืนยัน:
 - `project = SAM1 AND statusCategory != Done` → 4 ใบ (เฉพาะ FB-01…04 ใน version 3.0)
 - `project = SAM1 AND fixVersion = "2.0.0-evolution"` → 45 ใบ
 
-## Worklogs
+## Worklogs (จำลอง)
 
-ไม่มี — สมาชิกยังไม่ได้ Log Work จึงไม่มีไฟล์ `jira_worklogs.csv` (AC ใน EVM ประมาณจากหลักฐานใน git)
+ลงใน Jira ครบ 45 ใบ เมื่อ 2026-10-05 ผ่าน Atlassian connector — **เป็นชั่วโมงประมาณการ ไม่ใช่ timesheet จริง**
+ทุก worklog มีหมายเหตุ "⚠️ ชั่วโมงประมาณการ (จำลอง)" และถูกบันทึกในชื่อบัญชีที่เชื่อม connector (ไม่ใช่ชื่อสมาชิกแต่ละคน)
+
+| Sprint | Issues | ชั่วโมง | ที่มา |
+|---|---:|---:|---|
+| Sprint 1 | 16 | 64.5 | 4 ชม./ใบ + งานทำซ้ำ PR #14→#19 0.5 ชม. (SAM1-24) |
+| Sprint 2 | 19 | 67.0 | 4 ชม./ใบ · CR-02 4.5 · DEF-03 1.25 · DEF-01 0.75 · DEF-02 0.5 |
+| Sprint 3 | 10 | 37.5 | 4 ชม./ใบ · UAT-DEF-01 1.5 |
+| **รวม** | **45** | **169.0** | ตรงกับ AC ใน [Final EVM](../docs/week12/Final_EVM_and_Velocity_Report.md) |
