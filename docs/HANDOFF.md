@@ -34,7 +34,11 @@ python app_v2.py           # รันโปรแกรม
 
 ## 3. งานที่ยังค้าง (ต้องใช้คน)
 
-1. ลงนาม: ใบ UAT Sign-off · Technical Handover Certificate · Final Project Acceptance Certificate · Team Release & Peer Review
+1. ลงนาม (สถานะ 2026-10-05) — ฉบับสแกนที่มีลายมือชื่อ**ไม่เก็บใน repo** (repo เป็นสาธารณะ) — ส่งให้อาจารย์โดยตรง / เก็บใน Drive ของทีม
+   - ✅ UAT Sign-off ครบ 3 ช่อง (PM ลงนามในฐานะผู้รับรองผลจำลอง) · ช่อง "กลุ่ม" ของ PM ยังว่าง
+   - 🔶 Technical Handover — Tech Lead · QA ลงนามพร้อมวันที่แล้ว · รอกรรมการ + Sponsor และกรอกข้อ 6 ระหว่างสาธิตสด
+   - 🔶 Final Project Acceptance — ทีม 4 คนลงนามแล้ว แต่ยังไม่ลงวันที่ · รอ Sponsor + มติ
+   - ⬜ Peer Review — มี 1 ชุด ยังไม่ระบุผู้ประเมิน/วันที่ และประเมินครบ 4 คน (ฟอร์มห้ามประเมินตัวเอง) · ต้องครบ 4 ชุด
 2. **Branch Protection** — เจ้าของ repo `PeawZaZa` เท่านั้นที่ทำได้ (บัญชีอื่นไม่มีสิทธิ์ admin) ขั้นตอนอยู่ใน [week15/README.md](week15/README.md) ข้อ 7 — ห้ามติ๊ก Required status checks จนกว่าจะเคลียร์ billing
 3. GitHub Actions ติด billing → CI ไม่รัน ต้องให้เจ้าของบัญชีเคลียร์
 4. ซ้อมสาธิตตาม [Live Demo Script](week15/Live_Demo_and_Defense_Script.md)
@@ -45,6 +49,7 @@ python app_v2.py           # รันโปรแกรม
 - **UAT เป็นแบบจำลองโดยทีม** ไม่ใช่ cross-team — ระบุไว้ทุกที่ ห้ามเขียนว่าเป็นของจริง
 - **Worklog ใน Jira เป็นชั่วโมงประมาณการ** ทุกใบมีหมายเหตุ "⚠️ ชั่วโมงประมาณการ (จำลอง)"
 - ห้ามปลอมลายเซ็นหรือกรอกชื่อผู้อนุมัติแทนคนจริง
+- ห้าม commit ไฟล์สแกนที่มีลายมือชื่อ — `signed/` ถูก ignore ไว้แล้ว
 - กราฟ Burnup/Burndown/Velocity ใน Jira แบนหรือว่าง (สถานะอัปเดตย้อนหลังวันเดียว · Estimation = Time ไม่มี estimate) → ใช้กราฟใน `docs/images/` ที่สร้างจาก commit/PR history เป็นหลัก
 - SAM1-39 ค้างใน Sprint 3 ทำให้ Jira นับ Sprint 3 = 11 ใบ (ค่าถูกต้อง 10) — แก้ใน sprint ที่ปิดแล้วไม่ได้ บันทึกไว้ใน `project_archives/jira_sprints_and_release.md`
 - merge เข้า `main` ทำตรงโดยไม่ผ่าน PR (ไม่มี gh CLI) — บันทึกใน Release Runbook

@@ -35,3 +35,7 @@ exports/
 build/
 dist/
 *.egg-info/
+
+# ฉบับสแกนที่มีลายมือชื่อจริง — ห้ามขึ้น repo สาธารณะ
+signed/
+*_signed.pdf
