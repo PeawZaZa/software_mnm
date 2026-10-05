@@ -40,4 +40,9 @@
 4. ✅ เปิด CSV ด้วย LibreOffice Calc จริง — ภาษาไทยและชื่อที่มีจุลภาคถูกต้อง ([ภาพ](evidence/csv_in_libreoffice_low_stock.png)) · เครื่องไม่มี Excel
 5. ✅ Docker: build image + smoke test ผ่าน 5/5 ([log](evidence/docker_smoke_test.log))
 6. ซ้อมสาธิตบนเครื่องอื่นตาม [Live Demo Script](Live_Demo_and_Defense_Script.md)
-7. หลังนำเสนอ: ลงนามเอกสาร → ทำ [Repository Ownership Transfer](Technical_Handover_Certificate.md#4-repository-ownership-transfer-เจ้าของบัญชี-peawzaza-ทำ) → Archive Jira
+7. ⬜ **Branch Protection (เจ้าของ repo `PeawZaZa` ต้องทำ — บัญชีสมาชิกอื่นไม่มีสิทธิ์ admin):**
+   Settings → Branches → Add classic branch protection rule สำหรับ `main` และ `develop`
+   - ✅ Require a pull request before merging · Required approvals = 1
+   - ✅ Do not allow bypassing the above settings
+   - ⬜ ยังไม่ติ๊ก Require status checks จนกว่าจะเคลียร์ billing ของ GitHub Actions (ไม่งั้น merge ไม่ได้เลย)
+8. หลังนำเสนอ: ลงนามเอกสาร → ทำ [Repository Ownership Transfer](Technical_Handover_Certificate.md#4-repository-ownership-transfer-เจ้าของบัญชี-peawzaza-ทำ) → Archive Jira
