@@ -29,7 +29,7 @@
 
 ## ⬜ ลำดับงานที่ต้องทำเองก่อนวันนำเสนอ
 
-1. ✅ merge เข้า `main` + tag `v2.0.0-evolution` และ `v2.0.1-evolution` แล้ว · ⬜ ลงนามใบ UAT · ✅ สร้างหน้า GitHub Release ทั้ง 2 เวอร์ชันแล้ว ([ภาพ](evidence/github_releases.jpg)) · ⬜ แนบไฟล์ใน [`../week14/artifacts/`](../week14/artifacts/) เพิ่มเอง (ตอนนี้มีแค่ source zip อัตโนมัติ)
+1. ✅ merge เข้า `main` + tag `v2.0.0-evolution` และ `v2.0.1-evolution` แล้ว · ⬜ ลงนามใบ UAT · ✅ สร้างหน้า GitHub Release ทั้ง 2 เวอร์ชันแล้ว ([ภาพ](evidence/github_releases.jpg)) · ✅ แนบ wheel · sdist · SHA256SUMS เข้า [Release v2.0.1-evolution](https://github.com/PeawZaZa/software_mnm/releases/tag/v2.0.1-evolution) แล้ว (ดาวน์โหลดกลับมาตรวจ checksum ผ่าน)
 2. ✅ Jira: Sprint 3 ปิด · Release `2.0.0-evolution` released · 45/45 issues · ✅ แคปภาพหลักฐานแล้ว ([Summary](evidence/jira_summary.jpg) · [Reports](evidence/jira_reports_overview.jpg) · [Velocity](evidence/jira_velocity.jpg) · [Burnup](evidence/jira_burnup_sprint3.jpg) · [Burndown](evidence/jira_burndown_sprint3.jpg) · [CFD](evidence/jira_cfd.jpg))
    - ⚠️ **อ่านกราฟ Jira อย่างระวัง:** Velocity แสดง Commitment 0 เพราะโปรเจกต์ตั้ง Estimation = Time แต่ไม่ได้ใส่ original estimate ตอนเริ่ม sprint ·
      Burnup/Burndown (นับจำนวนงาน) ของ Sprint 3 เป็นเส้นแบน 11 ใบแล้วหักที่ 5 ต.ค. เพราะสถานะใน Jira ถูกอัปเดตย้อนหลังพร้อมกันในวันเดียว ไม่ได้อัปเดตระหว่าง sprint ·
