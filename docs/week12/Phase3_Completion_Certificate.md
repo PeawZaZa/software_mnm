@@ -37,4 +37,4 @@
 | Project Manager | ปวริศ คูณศรี | | |
 | Tech Lead | พนาวุฒน์ อภิปสันติ | | |
 
-> 🖊️ สแกนใบที่ลงนามแล้วเก็บไว้ที่ `docs/week12/signed/Phase3_Completion_signed.pdf`
+> 🖊️ สแกนใบที่ลงนามแล้วเก็บนอก repo (ส่งอาจารย์โดยตรง / Drive ของทีม) — ห้าม commit ลายมือชื่อขึ้น repo สาธารณะ

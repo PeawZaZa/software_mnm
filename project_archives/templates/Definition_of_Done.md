@@ -29,7 +29,7 @@
 
 | # | เกณฑ์ | กลไกบังคับ |
 |---|---|---|
-| 1 | UAT sign-off ลงนามแล้ว | ไฟล์สแกนอยู่ใน `docs/.../signed/` ก่อนเปิด PR เข้า `main` |
+| 1 | UAT sign-off ลงนามแล้ว | มีฉบับสแกน (เก็บนอก repo) ก่อนเปิด PR เข้า `main` |
 | 2 | ติดตั้งจาก `git clone` ลงโฟลเดอร์ว่างผ่าน | `setup.sh` + smoke test — แนบ log ใน PR |
 | 3 | มีแท็ก annotated + CHANGELOG | ผู้รีวิว PR release |
 | 4 | แท็กก่อนหน้ายังรันเทสต์ผ่าน (จุด rollback) | รันใน `git worktree` แนบผลใน PR |
